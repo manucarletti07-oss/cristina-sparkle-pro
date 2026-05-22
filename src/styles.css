@@ -4,6 +4,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap");
+
 /*
  * Design system definition.
  *
@@ -59,42 +61,54 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --font-display: "Playfair Display", serif;
+  --font-sans: "Montserrat", system-ui, sans-serif;
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
+  /* Brand palette: gold #bfa37e, ink #121212, cream #f9f9f9 */
+  --gold: oklch(0.74 0.06 75);
+  --gold-soft: oklch(0.86 0.04 80);
+  --ink: oklch(0.18 0 0);
+  --cream: oklch(0.98 0.005 80);
+
   --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.18 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: oklch(0.18 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --popover-foreground: oklch(0.18 0 0);
+  --primary: oklch(0.74 0.06 75); /* gold */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.98 0.005 80);
+  --secondary-foreground: oklch(0.18 0 0);
+  --muted: oklch(0.96 0.005 80);
+  --muted-foreground: oklch(0.45 0.01 75);
+  --accent: oklch(0.92 0.03 80);
+  --accent-foreground: oklch(0.18 0 0);
+  --destructive: oklch(0.55 0.2 27);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0.01 80);
+  --input: oklch(0.94 0.01 80);
+  --ring: oklch(0.74 0.06 75);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar: oklch(0.18 0 0);
+  --sidebar-foreground: oklch(0.98 0.005 80);
+  --sidebar-primary: oklch(0.74 0.06 75);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.25 0 0);
+  --sidebar-accent-foreground: oklch(0.98 0.005 80);
+  --sidebar-border: oklch(0.3 0 0);
+  --sidebar-ring: oklch(0.74 0.06 75);
 }
 
 .dark {
@@ -140,5 +154,93 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
+
+  html { scroll-behavior: smooth; }
+
+  h1, h2, h3, h4, .font-display { font-family: var(--font-display); }
+}
+
+@layer utilities {
+  .glass {
+    background: color-mix(in oklab, white 70%, transparent);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid color-mix(in oklab, var(--gold) 25%, transparent);
+  }
+  .glass-dark {
+    background: color-mix(in oklab, black 55%, transparent);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent);
+  }
+  .gold-shadow {
+    box-shadow: 0 20px 50px -20px color-mix(in oklab, var(--gold) 50%, transparent);
+  }
+  .text-balance { text-wrap: balance; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--gold) 8%, transparent) 0%,
+    color-mix(in oklab, var(--gold) 22%, transparent) 50%,
+    color-mix(in oklab, var(--gold) 8%, transparent) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes check-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes circle-draw {
+  to { stroke-dashoffset: 0; }
+}
+.confirm-circle {
+  stroke-dasharray: 283;
+  stroke-dashoffset: 283;
+  animation: circle-draw 0.6s ease-out forwards;
+}
+.confirm-check {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: check-draw 0.4s 0.5s ease-out forwards;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+
+@keyframes gold-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--gold) 50%, transparent); }
+  50% { box-shadow: 0 0 0 12px color-mix(in oklab, var(--gold) 0%, transparent); }
+}
+.gold-pulse { animation: gold-pulse 2.4s ease-in-out infinite; }
+
+/* shadcn dialog overlay glassmorphism */
+[data-slot="dialog-overlay"] {
+  background: color-mix(in oklab, black 60%, transparent) !important;
+  backdrop-filter: blur(8px);
+}
+[data-slot="dialog-content"] {
+  border-color: color-mix(in oklab, var(--gold) 30%, transparent) !important;
+  border-radius: 1.25rem !important;
+}
+
+/* Sonner toast premium look */
+[data-sonner-toast] {
+  font-family: var(--font-sans);
+  border: 1px solid color-mix(in oklab, var(--gold) 35%, transparent) !important;
+  border-radius: 14px !important;
+}
+[data-sonner-toast] [data-title] {
+  font-family: var(--font-display);
+  font-weight: 600;
 }
