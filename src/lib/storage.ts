@@ -28,6 +28,12 @@ export function getCitas(): Cita[] {
   }
 }
 
+export function isSlotTaken(fecha: string, hora: string): boolean {
+  return getCitas().some(
+    (c) => c.fecha === fecha && c.hora === hora && c.estado !== "realizada"
+  );
+}
+
 export function saveCita(cita: Omit<Cita, "id" | "createdAt" | "estado">): Cita {
   const ls = safeWindow();
   const full: Cita = {
