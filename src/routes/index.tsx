@@ -145,6 +145,37 @@ function Index() {
 
       {/* PROMOCIONES */}
       <section id="promociones" className="py-28 bg-background">
+        <PreciosBloque onBook={openCategory} />
+
+        <div className="max-w-6xl mx-auto px-6 mt-28">
+          <div className="text-center mb-16">
+            <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Ofertas exclusivas</span>
+            <h2 className="font-display text-4xl md:text-5xl mt-3 text-foreground">Promociones y Bonos</h2>
+            <div className="h-px w-12 bg-primary mx-auto mt-6" />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            <PromoCard
+              badge="Recomendado"
+              titulo="Bono Facial VIP"
+              descripcion="Pack de 5 sesiones de vitaminas y peeling ultrasónico."
+              precio={180}
+              antes={225}
+              onBook={openGeneric}
+            />
+            <PromoCard
+              titulo="Bono Maderoterapia"
+              descripcion="10 sesiones intensivas para reducir y reafirmar."
+              precio={350}
+              antes={450}
+              onBook={openGeneric}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* OLD PROMO BLOCK REMOVED */}
+      <section className="hidden">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Ofertas exclusivas</span>
