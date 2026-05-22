@@ -114,12 +114,52 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
       <DialogContent className="glass max-w-lg max-h-[92vh] overflow-y-auto gold-shadow">
         {stage === "done" ? (
           <ConfirmAnimation onClose={() => onOpenChange(false)} />
-        ) : (
+        ) : !cat || !data ? (
           <>
             <DialogHeader>
               <DialogTitle className="font-display text-3xl text-foreground">
                 Reserva tu Cita
               </DialogTitle>
+              <DialogDescription>
+                Elige la categoría de tratamiento para continuar
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 pt-2">
+              {CATEGORIAS.map(({ key, label, icon: Icon, desc }) => (
+                <button
+                  key={key}
+                  onClick={() => setCat(key)}
+                  className="group flex items-center gap-4 rounded-xl border border-primary/20 bg-background/40 px-5 py-4 text-left transition-all hover:border-primary hover:bg-primary/5 hover:translate-x-1"
+                >
+                  <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Icon className="size-5" />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block font-display text-lg text-foreground">{label}</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">{desc}</span>
+                  </span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    Elegir
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setCat(null); setSelected([]); }}
+                  className="p-1.5 -ml-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="Volver"
+                >
+                  <ArrowLeft className="size-4" />
+                </button>
+                <DialogTitle className="font-display text-3xl text-foreground">
+                  Reserva tu Cita
+                </DialogTitle>
+              </div>
               <DialogDescription>
                 {data.titulo} · selecciona tratamientos y elige fecha
               </DialogDescription>
