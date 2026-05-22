@@ -276,7 +276,7 @@ function ConfirmAnimation({ onClose }: { onClose: () => void }) {
       </div>
       <h3 className="font-display text-3xl mt-6 text-foreground">Cita Confirmada</h3>
       <p className="text-sm text-muted-foreground mt-2 max-w-xs">
-        Tu cita ha sido guardada. Abriendo WhatsApp para avisar a Cristina…
+        Tu cita ha sido registrada correctamente. Cristina te esperará el día reservado.
       </p>
       <div className="flex gap-2 mt-6">
         <Check className="size-4 text-primary" />
