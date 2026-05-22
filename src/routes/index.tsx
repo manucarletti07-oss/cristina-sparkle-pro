@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Award, Sparkles, Flower2, HeartPulse, Zap, Eye, Brush } from "lucide-react";
+import { ArrowRight, Award, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
 import { Button } from "@/components/ui/button";
-import { SERVICIOS, type ServiceCategory } from "@/lib/config";
+import { type ServiceCategory } from "@/lib/config";
 import heroImg from "@/assets/momento.jpg";
 import facialImg from "@/assets/facial-trabajo.jpg";
 import corporalImg from "@/assets/cabina.jpg";
