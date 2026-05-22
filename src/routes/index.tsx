@@ -36,13 +36,6 @@ const SERVICE_CARDS: { key: ServiceCategory; img: string; phrase: string }[] = [
   { key: "mirada", img: miradaImg, phrase: "Mirada y manos: detalles que marcan la diferencia." },
 ];
 
-const PRICE_ORDER: { key: ServiceCategory; Icon: typeof Flower2 }[] = [
-  { key: "facial", Icon: Flower2 },
-  { key: "corporal", Icon: HeartPulse },
-  { key: "depilacion", Icon: Zap },
-  { key: "mirada", Icon: Eye },
-  { key: "micropigmentacion", Icon: Brush },
-];
 
 function Index() {
   const [bookingOpen, setBookingOpen] = useState(false);
