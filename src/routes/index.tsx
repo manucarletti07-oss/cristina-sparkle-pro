@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
 import { Button } from "@/components/ui/button";
-import { type ServiceCategory } from "@/lib/config";
+import { SERVICIOS, type ServiceCategory } from "@/lib/config";
 import heroImg from "@/assets/momento.jpg";
 import facialImg from "@/assets/facial-trabajo.jpg";
 import corporalImg from "@/assets/cabina.jpg";
