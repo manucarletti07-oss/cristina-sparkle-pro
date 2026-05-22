@@ -245,7 +245,7 @@ function Index() {
 
       <Footer />
 
-      <BookingModal open={bookingOpen} onOpenChange={setBookingOpen} category={category} />
+      <BookingModal open={bookingOpen} onOpenChange={setBookingOpen} category={null} />
     </div>
   );
 }
