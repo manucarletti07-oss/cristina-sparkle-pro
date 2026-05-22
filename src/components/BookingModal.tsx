@@ -161,32 +161,30 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
                     </PopoverTrigger>
                     <PopoverContent className="w-48 p-2" align="start">
                       <div className="grid grid-cols-3 gap-1.5 max-h-60 overflow-y-auto">
-                        {HORAS.map((h) => (
-                          (() => {
-                            const ocupada = horasOcupadas.has(h);
-                            return (
-                              <button
-                                key={h}
-                                disabled={ocupada}
-                                onClick={() => {
-                                  setHora(h);
-                                  document.body.click();
-                                }}
-                                className={cn(
-                                  "text-xs py-1.5 rounded-md transition-colors relative",
-                                  ocupada
-                                    ? "bg-muted text-muted-foreground/50 line-through cursor-not-allowed"
-                                    : hora === h
-                                    ? "bg-primary text-primary-foreground"
-                                    : "hover:bg-primary/10 text-foreground"
-                                )}
-                                title={ocupada ? "Hora ocupada" : ""}
-                              >
-                                {h}
-                              </button>
-                            );
-                          })()
-                        ))}
+                        {HORAS.map((h) => {
+                          const ocupada = horasOcupadas.has(h);
+                          return (
+                            <button
+                              key={h}
+                              disabled={ocupada}
+                              onClick={() => {
+                                setHora(h);
+                                document.body.click();
+                              }}
+                              className={cn(
+                                "text-xs py-1.5 rounded-md transition-colors relative",
+                                ocupada
+                                  ? "bg-muted text-muted-foreground/40 line-through cursor-not-allowed"
+                                  : hora === h
+                                  ? "bg-primary text-primary-foreground"
+                                  : "hover:bg-primary/10 text-foreground"
+                              )}
+                              title={ocupada ? "Hora ocupada" : ""}
+                            >
+                              {h}
+                            </button>
+                          );
+                        })}
                       </div>
                     </PopoverContent>
                   </Popover>
