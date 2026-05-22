@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Award, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
 import { Button } from "@/components/ui/button";
 import { SERVICIOS, type ServiceCategory } from "@/lib/config";
-import heroImg from "@/assets/hero.jpg";
-import facialImg from "@/assets/facial.jpg";
-import corporalImg from "@/assets/corporal.jpg";
-import miradaImg from "@/assets/mirada.jpg";
+import heroImg from "@/assets/momento.jpg";
+import facialImg from "@/assets/facial-trabajo.jpg";
+import corporalImg from "@/assets/cabina.jpg";
+import miradaImg from "@/assets/tratamiento-facial.jpg";
+import cristinaImg from "@/assets/cristina.jpg";
+import equipoImg from "@/assets/equipo.jpg";
+import fachadaImg from "@/assets/fachada.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -163,15 +166,68 @@ function Index() {
 
       {/* SOBRE */}
       <section id="sobre" className="py-28 bg-secondary">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Sobre mí</span>
-          <h2 className="font-display text-4xl md:text-5xl mt-3 text-foreground">Más que estética, una experiencia</h2>
-          <div className="h-px w-12 bg-primary mx-auto my-8" />
-          <p className="text-base md:text-lg leading-relaxed text-foreground/75">
-            Soy <span className="font-semibold text-primary">Cristina Cebrián</span>, esteticista en Alcorcón con más de
-            una década dedicada al cuidado integral de la piel y el cuerpo. Cada tratamiento se diseña a medida, con
-            tecnología avanzada y un enfoque cálido y cercano.
-          </p>
+        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+          <div className="relative">
+            <img
+              src={cristinaImg}
+              alt="Cristina Cebrián en su centro de estética avanzada"
+              width={900}
+              height={1200}
+              className="rounded-3xl gold-shadow object-cover aspect-[3/4] w-full"
+              loading="lazy"
+            />
+            <div className="absolute -bottom-6 -right-4 md:-right-8 bg-background border border-primary/25 rounded-2xl px-5 py-4 shadow-xl flex items-center gap-3">
+              <Award className="size-5 text-primary" />
+              <div className="text-left leading-tight">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Comercio</p>
+                <p className="font-display text-sm text-foreground">Recomendado en Alcorcón</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Sobre mí</span>
+            <h2 className="font-display text-4xl md:text-5xl mt-3 text-foreground">
+              Estética es el arte de potenciar <em className="text-primary">tu belleza</em>
+            </h2>
+            <div className="h-px w-12 bg-primary my-8" />
+            <p className="text-base md:text-lg leading-relaxed text-foreground/75">
+              Soy <span className="font-semibold text-primary">Cristina Cebrián</span>, esteticista en Alcorcón con más de
+              una década dedicada al cuidado integral de la piel y el cuerpo. Cada tratamiento se diseña a medida,
+              combinando tecnología avanzada (radiofrecuencia, criolipolisis, t-dynamics) con un enfoque cálido y cercano.
+            </p>
+            <p className="mt-4 italic font-display text-foreground/70">
+              "Tu momento es ahora. Regálate el cuidado que mereces."
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* GALERÍA */}
+      <section id="galeria" className="py-28 bg-background">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Nuestro espacio</span>
+            <h2 className="font-display text-4xl md:text-5xl mt-3 text-foreground">Un refugio en Alcorcón</h2>
+            <div className="h-px w-12 bg-primary mx-auto mt-6" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[fachadaImg, equipoImg, corporalImg, miradaImg].map((src, i) => (
+              <div
+                key={i}
+                className={`relative overflow-hidden rounded-2xl group ${
+                  i === 0 ? "col-span-2 row-span-2 aspect-square md:aspect-auto" : "aspect-square"
+                }`}
+              >
+                <img
+                  src={src}
+                  alt="Centro Cristina Cebrián"
+                  className="size-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
