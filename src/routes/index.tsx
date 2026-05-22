@@ -174,34 +174,7 @@ function Index() {
         </div>
       </section>
 
-      {/* OLD PROMO BLOCK REMOVED */}
-      <section className="hidden">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Ofertas exclusivas</span>
-            <h2 className="font-display text-4xl md:text-5xl mt-3 text-foreground">Promociones y Bonos</h2>
-            <div className="h-px w-12 bg-primary mx-auto mt-6" />
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <PromoCard
-              badge="Recomendado"
-              titulo="Bono Facial VIP"
-              descripcion="Pack de 5 sesiones de vitaminas y peeling ultrasónico."
-              precio={180}
-              antes={225}
-              onBook={openGeneric}
-            />
-            <PromoCard
-              titulo="Bono Maderoterapia"
-              descripcion="10 sesiones intensivas para reducir y reafirmar."
-              precio={350}
-              antes={450}
-              onBook={openGeneric}
-            />
-          </div>
-        </div>
-      </section>
 
       {/* SOBRE */}
       <section id="sobre" className="py-28 bg-secondary">
@@ -311,6 +284,63 @@ function PromoCard({
       >
         Quiero este bono
       </Button>
+    </div>
+  );
+}
+
+function PreciosBloque({ onBook }: { onBook: (c: ServiceCategory) => void }) {
+  return (
+    <div id="precios" className="max-w-6xl mx-auto px-6">
+      <div className="text-center mb-14">
+        <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Tarifa oficial</span>
+        <h2 className="font-display text-4xl md:text-5xl mt-3 text-foreground">Precios</h2>
+        <div className="h-px w-12 bg-primary mx-auto mt-6" />
+        <p className="mt-5 text-sm text-muted-foreground max-w-md mx-auto">
+          Tratamientos por sesión. Bonos personalizados de láser, faciales y corporales a consultar.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {PRICE_ORDER.map(({ key, Icon }) => {
+          const cat = SERVICIOS[key];
+          return (
+            <div
+              key={key}
+              className="group relative bg-card border border-primary/15 rounded-3xl p-7 transition-all duration-500 hover:border-primary hover:-translate-y-1 hover:gold-shadow flex flex-col"
+            >
+              <div className="flex items-center gap-3 pb-4 mb-4 border-b border-primary/10">
+                <span className="size-10 rounded-full bg-primary/10 text-primary grid place-items-center">
+                  <Icon className="size-5" />
+                </span>
+                <h3 className="font-display text-2xl text-foreground">{cat.titulo}</h3>
+              </div>
+              <ul className="space-y-2.5 text-sm flex-1">
+                {cat.treatments.map((t) => (
+                  <li key={t.nombre} className="flex items-baseline gap-3">
+                    <span className="text-foreground/85">{t.nombre}</span>
+                    <span className="flex-1 border-b border-dotted border-primary/25 translate-y-[-3px]" />
+                    <span className="font-semibold text-primary whitespace-nowrap">
+                      {t.desde && (
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mr-1">
+                          desde
+                        </span>
+                      )}
+                      {t.precio}€
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                onClick={() => onBook(key)}
+                variant="outline"
+                className="mt-6 w-full border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground text-[10px] uppercase tracking-[0.25em] rounded-full"
+              >
+                Reservar {cat.titulo}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
