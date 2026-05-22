@@ -71,31 +71,35 @@
 
 :root {
   --radius: 0.75rem;
-  /* Brand palette: gold #bfa37e, ink #121212, cream #f9f9f9 */
-  --gold: oklch(0.74 0.06 75);
-  --gold-soft: oklch(0.86 0.04 80);
+  /* Brand palette inspired by salon photos:
+     warm bronze/gold (logo), soft sage green (glass walls, badge),
+     warm cream (interior), deep ink (uniforms). */
+  --gold: oklch(0.7 0.07 65);
+  --gold-soft: oklch(0.86 0.04 75);
+  --sage: oklch(0.78 0.04 155);
+  --sage-deep: oklch(0.5 0.07 155);
   --ink: oklch(0.18 0 0);
-  --cream: oklch(0.98 0.005 80);
+  --cream: oklch(0.975 0.008 90);
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.18 0 0);
+  --background: oklch(0.985 0.006 90);
+  --foreground: oklch(0.18 0.005 150);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0 0);
+  --card-foreground: oklch(0.18 0.005 150);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0 0);
-  --primary: oklch(0.74 0.06 75); /* gold */
+  --popover-foreground: oklch(0.18 0.005 150);
+  --primary: oklch(0.7 0.07 65); /* warm bronze-gold */
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.98 0.005 80);
-  --secondary-foreground: oklch(0.18 0 0);
-  --muted: oklch(0.96 0.005 80);
-  --muted-foreground: oklch(0.45 0.01 75);
-  --accent: oklch(0.92 0.03 80);
-  --accent-foreground: oklch(0.18 0 0);
+  --secondary: oklch(0.94 0.018 150); /* soft sage tint */
+  --secondary-foreground: oklch(0.22 0.01 150);
+  --muted: oklch(0.95 0.012 100);
+  --muted-foreground: oklch(0.45 0.015 130);
+  --accent: oklch(0.86 0.035 150); /* sage accent */
+  --accent-foreground: oklch(0.22 0.01 150);
   --destructive: oklch(0.55 0.2 27);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.01 80);
-  --input: oklch(0.94 0.01 80);
-  --ring: oklch(0.74 0.06 75);
+  --border: oklch(0.9 0.012 130);
+  --input: oklch(0.93 0.012 130);
+  --ring: oklch(0.7 0.07 65);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
