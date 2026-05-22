@@ -138,9 +138,7 @@ function Index() {
 
       {/* PROMOCIONES */}
       <section id="promociones" className="py-28 bg-background">
-        <PreciosBloque onBook={openCategory} />
-
-        <div className="max-w-6xl mx-auto px-6 mt-28">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Ofertas exclusivas</span>
             <h2 className="font-display text-4xl md:text-5xl mt-3 text-foreground">Promociones y Bonos</h2>
