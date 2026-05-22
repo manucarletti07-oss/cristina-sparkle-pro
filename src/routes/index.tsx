@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Award, Sparkles } from "lucide-react";
+import { ArrowRight, Award, Sparkles, Flower2, HeartPulse, Zap, Eye, Brush } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
@@ -33,7 +33,15 @@ export const Route = createFileRoute("/")({
 const SERVICE_CARDS: { key: ServiceCategory; img: string; phrase: string }[] = [
   { key: "facial", img: facialImg, phrase: "Realza tu belleza natural. Un rostro radiante empieza aquí." },
   { key: "corporal", img: corporalImg, phrase: "Redefine tu cuerpo: tratamientos corporales que transforman." },
-  { key: "mirada", img: miradaImg, phrase: "Resalta tu mirada, mima tus manos: detalles que marcan la diferencia." },
+  { key: "mirada", img: miradaImg, phrase: "Mirada y manos: detalles que marcan la diferencia." },
+];
+
+const PRICE_ORDER: { key: ServiceCategory; Icon: typeof Flower2 }[] = [
+  { key: "facial", Icon: Flower2 },
+  { key: "corporal", Icon: HeartPulse },
+  { key: "depilacion", Icon: Zap },
+  { key: "mirada", Icon: Eye },
+  { key: "micropigmentacion", Icon: Brush },
 ];
 
 function Index() {
