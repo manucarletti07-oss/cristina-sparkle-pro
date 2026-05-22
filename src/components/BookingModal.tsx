@@ -11,8 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { SERVICIOS, SITE, type ServiceCategory } from "@/lib/config";
-import { saveCita } from "@/lib/storage";
+import { SERVICIOS, type ServiceCategory } from "@/lib/config";
+import { getCitas, isSlotTaken, saveCita } from "@/lib/storage";
 
 type Props = {
   open: boolean;
@@ -55,6 +55,16 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
     [selected, data]
   );
 
+  const fechaIsoSel = fecha ? format(fecha, "yyyy-MM-dd") : "";
+  const horasOcupadas = useMemo(() => {
+    if (!fechaIsoSel) return new Set<string>();
+    return new Set(
+      getCitas()
+        .filter((c) => c.fecha === fechaIsoSel && c.estado !== "realizada")
+        .map((c) => c.hora)
+    );
+  }, [fechaIsoSel, open]);
+
   const toggle = (n: string) =>
     setSelected((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
 
@@ -65,12 +75,17 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
     if (!hora) return toast.error("Selecciona una hora");
     if (selected.length === 0) return toast.error("Selecciona al menos un tratamiento");
 
+    const fechaIso = format(fecha, "yyyy-MM-dd");
+    if (isSlotTaken(fechaIso, hora)) {
+      return toast.error("Esa hora ya está ocupada", {
+        description: "Por favor, elige otro horario disponible.",
+      });
+    }
+
     setStage("loading");
-    // Simula procesamiento
     await new Promise((r) => setTimeout(r, 900));
 
-    const fechaIso = format(fecha, "yyyy-MM-dd");
-    const cita = saveCita({
+    saveCita({
       nombre: nombre.trim(),
       telefono: telefono.trim(),
       servicios: selected,
@@ -80,20 +95,9 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
     });
 
     setStage("done");
-
-    const mensaje =
-      `Hola Cristina! Soy ${cita.nombre} (${cita.telefono}). ` +
-      `Me gustaría reservar cita el día ${format(fecha, "d 'de' MMMM", { locale: es })} ` +
-      `a las ${cita.hora}. Tratamientos: ${cita.servicios.join(", ")}. ` +
-      `Total aproximado: ${cita.total}€.`;
-
-    setTimeout(() => {
-      window.open(
-        `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(mensaje)}`,
-        "_blank"
-      );
-      toast.success("Cita guardada", { description: "Cristina recibirá tu mensaje en WhatsApp." });
-    }, 1600);
+    toast.success("Cita confirmada", {
+      description: `${format(fecha, "d 'de' MMMM", { locale: es })} · ${hora}`,
+    });
   };
 
   return (
@@ -158,21 +162,30 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
                     <PopoverContent className="w-48 p-2" align="start">
                       <div className="grid grid-cols-3 gap-1.5 max-h-60 overflow-y-auto">
                         {HORAS.map((h) => (
-                          <button
-                            key={h}
-                            onClick={() => {
-                              setHora(h);
-                              document.body.click();
-                            }}
-                            className={cn(
-                              "text-xs py-1.5 rounded-md transition-colors",
-                              hora === h
-                                ? "bg-primary text-primary-foreground"
-                                : "hover:bg-primary/10 text-foreground"
-                            )}
-                          >
-                            {h}
-                          </button>
+                          (() => {
+                            const ocupada = horasOcupadas.has(h);
+                            return (
+                              <button
+                                key={h}
+                                disabled={ocupada}
+                                onClick={() => {
+                                  setHora(h);
+                                  document.body.click();
+                                }}
+                                className={cn(
+                                  "text-xs py-1.5 rounded-md transition-colors relative",
+                                  ocupada
+                                    ? "bg-muted text-muted-foreground/50 line-through cursor-not-allowed"
+                                    : hora === h
+                                    ? "bg-primary text-primary-foreground"
+                                    : "hover:bg-primary/10 text-foreground"
+                                )}
+                                title={ocupada ? "Hora ocupada" : ""}
+                              >
+                                {h}
+                              </button>
+                            );
+                          })()
                         ))}
                       </div>
                     </PopoverContent>
