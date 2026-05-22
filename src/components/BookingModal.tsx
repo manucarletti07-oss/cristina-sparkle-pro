@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, CalendarIcon, Check, Loader2, Sparkles, Waves, Scissors, Hand, Brush } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,14 @@ const HORAS = [
   "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
 ];
 
+const CATEGORIAS: { key: ServiceCategory; label: string; icon: typeof Sparkles; desc: string }[] = [
+  { key: "facial", label: "Faciales", icon: Sparkles, desc: "Limpieza, radiofrecuencia, dermapen…" },
+  { key: "corporal", label: "Corporales", icon: Waves, desc: "Maderoterapia, criolipolisis, masajes…" },
+  { key: "depilacion", label: "Depilación", icon: Scissors, desc: "Láser diodo, hilo…" },
+  { key: "mirada", label: "Manicura y Pestañas", icon: Hand, desc: "Lifting, laminado, manicura…" },
+  { key: "micropigmentacion", label: "Micropigmentación", icon: Brush, desc: "Microblading, eyeliner, lips…" },
+];
+
 export function BookingModal({ open, onOpenChange, category }: Props) {
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -32,9 +40,9 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
   const [fecha, setFecha] = useState<Date | undefined>();
   const [hora, setHora] = useState<string>("");
   const [stage, setStage] = useState<"form" | "loading" | "done">("form");
+  const [cat, setCat] = useState<ServiceCategory | null>(null);
 
-  const cat = category ?? "facial";
-  const data = SERVICIOS[cat];
+  const data = cat ? SERVICIOS[cat] : null;
 
   useEffect(() => {
     if (open) {
@@ -44,12 +52,13 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
       setTelefono("");
       setFecha(undefined);
       setHora("");
+      setCat(category ?? null);
     }
   }, [open, category]);
 
   const total = useMemo(
     () =>
-      data.treatments
+      (data?.treatments ?? [])
         .filter((t) => selected.includes(t.nombre))
         .reduce((s, t) => s + t.precio, 0),
     [selected, data]
