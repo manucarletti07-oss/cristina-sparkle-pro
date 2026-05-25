@@ -12,7 +12,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { SERVICIOS, type ServiceCategory } from "@/lib/config";
-import { getCitas, isSlotTaken, saveCita } from "@/lib/storage";
+import { getOcupadasPorFecha, saveCita } from "@/lib/storage";
 
 type Props = {
   open: boolean;
@@ -41,6 +41,7 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
   const [hora, setHora] = useState<string>("");
   const [stage, setStage] = useState<"form" | "loading" | "done">("form");
   const [cat, setCat] = useState<ServiceCategory | null>(null);
+  const [horasOcupadas, setHorasOcupadas] = useState<Set<string>>(new Set());
 
   const data = cat ? SERVICIOS[cat] : null;
 
@@ -65,14 +66,13 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
   );
 
   const fechaIsoSel = fecha ? format(fecha, "yyyy-MM-dd") : "";
-  const horasOcupadas = useMemo(() => {
-    if (!fechaIsoSel) return new Set<string>();
-    return new Set(
-      getCitas()
-        .filter((c) => c.fecha === fechaIsoSel && c.estado !== "realizada")
-        .map((c) => c.hora)
-    );
-  }, [fechaIsoSel, open]);
+  useEffect(() => {
+    if (!fechaIsoSel) {
+      setHorasOcupadas(new Set());
+      return;
+    }
+    getOcupadasPorFecha(fechaIsoSel).then(setHorasOcupadas);
+  }, [fechaIsoSel]);
 
   const toggle = (n: string) =>
     setSelected((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
@@ -85,16 +85,8 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
     if (selected.length === 0) return toast.error("Selecciona al menos un tratamiento");
 
     const fechaIso = format(fecha, "yyyy-MM-dd");
-    if (isSlotTaken(fechaIso, hora)) {
-      return toast.error("Esa hora ya está ocupada", {
-        description: "Por favor, elige otro horario disponible.",
-      });
-    }
-
     setStage("loading");
-    await new Promise((r) => setTimeout(r, 900));
-
-    saveCita({
+    const res = await saveCita({
       nombre: nombre.trim(),
       telefono: telefono.trim(),
       servicios: selected,
@@ -102,7 +94,12 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
       hora,
       total,
     });
-
+    if (!res.ok) {
+      setStage("form");
+      return toast.error(res.error, {
+        description: "Por favor, elige otro horario disponible.",
+      });
+    }
     setStage("done");
     toast.success("Cita confirmada", {
       description: `${format(fecha, "d 'de' MMMM", { locale: es })} · ${hora}`,
