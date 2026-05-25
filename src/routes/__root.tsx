@@ -77,11 +77,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Cristina Cebrián · Estética Avanzada en Alcorcón" },
       { name: "description", content: "Tratamientos faciales, corporales y de belleza en Alcorcón. Reserva tu cita con Cristina Cebrián." },
       { name: "author", content: "Cristina Cebrián" },
-      { property: "og:title", content: "Cristina Cebrián · Estética Avanzada" },
-      { property: "og:description", content: "Cuidamos tu esencia, resaltamos tu belleza. Cita previa online." },
+      { property: "og:title", content: "Cristina Cebrián · Estética Avanzada en Alcorcón" },
+      { property: "og:description", content: "Tratamientos faciales, corporales y de belleza en Alcorcón. Reserva tu cita con Cristina Cebrián." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Cristina Cebrián · Estética Avanzada en Alcorcón" },
+      { name: "twitter:description", content: "Tratamientos faciales, corporales y de belleza en Alcorcón. Reserva tu cita con Cristina Cebrián." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/63d8cd7d-8f85-45f1-ad4e-cea55404b00a/id-preview-c9eec108--0a6c5a27-97ba-4199-9eb7-137bd50d13a4.lovable.app-1779724858914.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/63d8cd7d-8f85-45f1-ad4e-cea55404b00a/id-preview-c9eec108--0a6c5a27-97ba-4199-9eb7-137bd50d13a4.lovable.app-1779724858914.png" },
     ],
     links: [
       {
