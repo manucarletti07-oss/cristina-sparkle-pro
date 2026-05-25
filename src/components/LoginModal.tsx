@@ -15,22 +15,20 @@ export function LoginModal({ open, onOpenChange }: { open: boolean; onOpenChange
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      const ok = login(email, password);
-      setLoading(false);
-      if (ok) {
-        toast.success("Bienvenida, Cristina", { description: "Acceso al panel concedido." });
-        onOpenChange(false);
-        setEmail("");
-        setPassword("");
-        navigate({ to: "/admin" });
-      } else {
-        toast.error("Credenciales incorrectas", { description: "Revisa el correo y la contraseña." });
-      }
-    }, 500);
+    const ok = await login(email, password);
+    setLoading(false);
+    if (ok) {
+      toast.success("Bienvenida, Cristina", { description: "Acceso al panel concedido." });
+      onOpenChange(false);
+      setEmail("");
+      setPassword("");
+      navigate({ to: "/admin" });
+    } else {
+      toast.error("Credenciales incorrectas", { description: "Revisa el correo y la contraseña." });
+    }
   };
 
   return (

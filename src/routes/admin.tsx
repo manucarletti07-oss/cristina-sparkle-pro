@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { deleteCita, getCitas, updateCita, type Cita } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -57,10 +58,21 @@ function Admin() {
       navigate({ to: "/" });
       return;
     }
-    const load = () => setCitas(getCitas());
+    const load = () => {
+      getCitas().then(setCitas);
+    };
     load();
-    window.addEventListener("citas-updated", load);
-    return () => window.removeEventListener("citas-updated", load);
+    const channel = supabase
+      .channel("citas-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "citas" },
+        () => load()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isAuth, navigate]);
 
   const stats = useMemo(() => {
@@ -76,19 +88,19 @@ function Admin() {
     [citas, filter]
   );
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast("Sesión cerrada", { description: "Hasta pronto, Cristina." });
     navigate({ to: "/" });
   };
 
-  const markDone = (c: Cita) => {
-    updateCita(c.id, { estado: "realizada" });
+  const markDone = async (c: Cita) => {
+    await updateCita(c.id, { estado: "realizada" });
     toast.success("Cita marcada como realizada");
   };
 
-  const remove = (c: Cita) => {
-    deleteCita(c.id);
+  const remove = async (c: Cita) => {
+    await deleteCita(c.id);
     toast("Cita eliminada", { description: `${c.nombre} · ${c.fecha}` });
   };
 

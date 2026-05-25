@@ -4,6 +4,7 @@ import { ArrowRight, Award, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
+import { ServiceInfoModal } from "@/components/ServiceInfoModal";
 import { Button } from "@/components/ui/button";
 import { SERVICIOS, type ServiceCategory } from "@/lib/config";
 import heroImg from "@/assets/momento.jpg";
@@ -39,15 +40,15 @@ const SERVICE_CARDS: { key: ServiceCategory; img: string; phrase: string }[] = [
 
 function Index() {
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [category, setCategory] = useState<ServiceCategory | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
 
-  const openCategory = (c: ServiceCategory) => {
-    setCategory(c);
-    setBookingOpen(true);
+  const openInfo = (c: ServiceCategory) => {
+    setInfoCategory(c);
+    setInfoOpen(true);
   };
 
   const openGeneric = () => {
-    setCategory("facial");
     setBookingOpen(true);
   };
 
@@ -109,7 +110,7 @@ function Index() {
             {SERVICE_CARDS.map((s) => (
               <button
                 key={s.key}
-                onClick={() => openCategory(s.key)}
+                onClick={() => openInfo(s.key)}
                 className="group text-left transition-transform duration-500 hover:-translate-y-2"
               >
                 <div className="relative aspect-[4/5] overflow-hidden rounded-3xl gold-shadow">
@@ -125,7 +126,7 @@ function Index() {
                   <div className="absolute inset-x-0 bottom-0 p-6 text-background">
                     <h3 className="font-display text-3xl">{SERVICIOS[s.key].titulo}</h3>
                     <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-primary mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Ver precios <ArrowRight className="size-3" />
+                      Más información <ArrowRight className="size-3" />
                     </span>
                   </div>
                 </div>
@@ -237,6 +238,12 @@ function Index() {
       <Footer />
 
       <BookingModal open={bookingOpen} onOpenChange={setBookingOpen} category={null} />
+      <ServiceInfoModal
+        open={infoOpen}
+        onOpenChange={setInfoOpen}
+        category={infoCategory}
+        onBook={openGeneric}
+      />
     </div>
   );
 }
