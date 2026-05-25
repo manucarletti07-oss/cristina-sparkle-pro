@@ -1,82 +1,92 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export type Cita = {
   id: string;
   nombre: string;
   telefono: string;
   servicios: string[];
-  fecha: string; // ISO date yyyy-mm-dd
-  hora: string; // HH:mm
+  fecha: string;
+  hora: string;
   total: number;
   estado: "pendiente" | "realizada";
   createdAt: string;
 };
 
-const CITAS_KEY = "citas-cristina";
-const AUTH_KEY = "auth-cristina";
+type Row = {
+  id: string;
+  nombre: string;
+  telefono: string;
+  servicios: string[];
+  fecha: string;
+  hora: string;
+  total: number;
+  estado: "pendiente" | "realizada";
+  created_at: string;
+};
 
-function safeWindow(): Storage | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage;
-}
+const toCita = (r: Row): Cita => ({
+  id: r.id,
+  nombre: r.nombre,
+  telefono: r.telefono,
+  servicios: r.servicios ?? [],
+  fecha: r.fecha,
+  hora: r.hora,
+  total: Number(r.total),
+  estado: r.estado,
+  createdAt: r.created_at,
+});
 
-export function getCitas(): Cita[] {
-  const ls = safeWindow();
-  if (!ls) return [];
-  try {
-    return JSON.parse(ls.getItem(CITAS_KEY) ?? "[]") as Cita[];
-  } catch {
+export async function getCitas(): Promise<Cita[]> {
+  const { data, error } = await supabase
+    .from("citas")
+    .select("*")
+    .order("fecha", { ascending: false })
+    .order("hora", { ascending: false });
+  if (error) {
+    console.error(error);
     return [];
   }
+  return (data as Row[]).map(toCita);
 }
 
-export function isSlotTaken(fecha: string, hora: string): boolean {
-  return getCitas().some(
-    (c) => c.fecha === fecha && c.hora === hora && c.estado !== "realizada"
-  );
+export async function getOcupadasPorFecha(fecha: string): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("citas")
+    .select("hora")
+    .eq("fecha", fecha)
+    .eq("estado", "pendiente");
+  if (error || !data) return new Set();
+  return new Set(data.map((r: { hora: string }) => r.hora));
 }
 
-export function saveCita(cita: Omit<Cita, "id" | "createdAt" | "estado">): Cita {
-  const ls = safeWindow();
-  const full: Cita = {
-    ...cita,
-    id: crypto.randomUUID(),
-    estado: "pendiente",
-    createdAt: new Date().toISOString(),
-  };
-  if (ls) {
-    const all = getCitas();
-    all.unshift(full);
-    ls.setItem(CITAS_KEY, JSON.stringify(all));
-    window.dispatchEvent(new Event("citas-updated"));
+export async function saveCita(
+  cita: Omit<Cita, "id" | "createdAt" | "estado">
+): Promise<{ ok: true; cita: Cita } | { ok: false; error: string }> {
+  const { data, error } = await supabase
+    .from("citas")
+    .insert({
+      nombre: cita.nombre,
+      telefono: cita.telefono,
+      servicios: cita.servicios,
+      fecha: cita.fecha,
+      hora: cita.hora,
+      total: cita.total,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    if (error.code === "23505") return { ok: false, error: "Esa hora ya está ocupada" };
+    return { ok: false, error: error.message };
   }
-  return full;
+  return { ok: true, cita: toCita(data as Row) };
 }
 
-export function updateCita(id: string, patch: Partial<Cita>) {
-  const ls = safeWindow();
-  if (!ls) return;
-  const all = getCitas().map((c) => (c.id === id ? { ...c, ...patch } : c));
-  ls.setItem(CITAS_KEY, JSON.stringify(all));
-  window.dispatchEvent(new Event("citas-updated"));
+export async function updateCita(id: string, patch: Partial<Pick<Cita, "estado">>) {
+  const { error } = await supabase.from("citas").update(patch).eq("id", id);
+  if (error) console.error(error);
 }
 
-export function deleteCita(id: string) {
-  const ls = safeWindow();
-  if (!ls) return;
-  const all = getCitas().filter((c) => c.id !== id);
-  ls.setItem(CITAS_KEY, JSON.stringify(all));
-  window.dispatchEvent(new Event("citas-updated"));
-}
-
-export function getAuth(): boolean {
-  const ls = safeWindow();
-  if (!ls) return false;
-  return ls.getItem(AUTH_KEY) === "1";
-}
-
-export function setAuth(v: boolean) {
-  const ls = safeWindow();
-  if (!ls) return;
-  if (v) ls.setItem(AUTH_KEY, "1");
-  else ls.removeItem(AUTH_KEY);
-  window.dispatchEvent(new Event("auth-updated"));
+export async function deleteCita(id: string) {
+  const { error } = await supabase.from("citas").delete().eq("id", id);
+  if (error) console.error(error);
 }
