@@ -151,11 +151,6 @@ function Admin() {
     toast("Cita eliminada", { description: `${c.nombre} · ${c.fecha}` });
   };
 
-  if (!ready || !isAuth) return null;
-
-  const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
-  const jessieCitas = visible.filter((c) => c.profesional === "jessie");
-
   // Bono activo por cliente (más reciente, con sesiones > 0)
   const bonoActivoByCliente = useMemo(() => {
     const map = new Map<string, Bono>();
@@ -168,6 +163,11 @@ function Admin() {
   }, [bonos]);
 
   const getBonoForCita = (c: Cita) => (c.clienteId ? bonoActivoByCliente.get(c.clienteId) ?? null : null);
+
+  if (!ready || !isAuth) return null;
+
+  const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
+  const jessieCitas = visible.filter((c) => c.profesional === "jessie");
 
   return (
     <div className="min-h-screen bg-foreground text-background">
