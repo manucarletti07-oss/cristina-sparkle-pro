@@ -162,14 +162,31 @@ function Admin() {
         </div>
 
         {/* SEARCH */}
-        <div className="mb-8 relative max-w-xl">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre, teléfono, fecha (2026-05-30) o profesional…"
-            className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
-          />
+        <div className="mb-8 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nombre, teléfono, fecha (2026-05-30) o profesional…"
+              className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setQuery(today)}
+              variant="outline"
+              className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+            >
+              Hoy
+            </Button>
+            <Button
+              onClick={() => setOpenNew(true)}
+              className="h-12 bg-primary text-primary-foreground hover:bg-primary/90 text-xs uppercase tracking-[0.2em]"
+            >
+              <Plus className="size-4" /> Nueva cita
+            </Button>
+          </div>
         </div>
 
         {/* STATS */}
