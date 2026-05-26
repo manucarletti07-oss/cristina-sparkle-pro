@@ -13,6 +13,8 @@ import {
   User as UserIcon,
   Sparkles,
   Search,
+  Pencil,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { deleteCita, getCitas, updateCita, type Cita } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
+import { BookingModal } from "@/components/BookingModal";
+import { EditCitaModal } from "@/components/EditCitaModal";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -55,6 +59,8 @@ function Admin() {
   const today = new Date().toISOString().slice(0, 10);
   const [query, setQuery] = useState(today);
   const [ready, setReady] = useState(false);
+  const [openNew, setOpenNew] = useState(false);
+  const [editing, setEditing] = useState<Cita | null>(null);
 
   useEffect(() => {
     setReady(true);
@@ -123,6 +129,9 @@ function Admin() {
 
   if (!ready || !isAuth) return null;
 
+  const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
+  const jessieCitas = visible.filter((c) => c.profesional === "jessie");
+
   return (
     <div className="min-h-screen bg-foreground text-background">
       {/* HEADER */}
@@ -153,14 +162,31 @@ function Admin() {
         </div>
 
         {/* SEARCH */}
-        <div className="mb-8 relative max-w-xl">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre, teléfono, fecha (2026-05-30) o profesional…"
-            className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
-          />
+        <div className="mb-8 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nombre, teléfono, fecha (2026-05-30) o profesional…"
+              className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setQuery(today)}
+              variant="outline"
+              className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+            >
+              Hoy
+            </Button>
+            <Button
+              onClick={() => setOpenNew(true)}
+              className="h-12 bg-primary text-primary-foreground hover:bg-primary/90 text-xs uppercase tracking-[0.2em]"
+            >
+              <Plus className="size-4" /> Nueva cita
+            </Button>
+          </div>
         </div>
 
         {/* STATS */}
@@ -194,27 +220,53 @@ function Admin() {
         </div>
 
         {/* LIST */}
-        {visible.length === 0 ? (
-          <div className="border border-dashed border-primary/30 rounded-3xl p-16 text-center">
-            <CalendarIcon className="size-10 text-primary mx-auto mb-4" />
-            <p className="font-display text-2xl text-background">
-              {query ? "Sin resultados" : "Sin citas todavía"}
-            </p>
-            <p className="text-sm text-background/60 mt-2">
-              {query
-                ? "Prueba con otro nombre, teléfono o fecha."
-                : "Las reservas de tus clientas aparecerán aquí automáticamente."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {visible.map((c) => (
-              <CitaCard key={c.id} cita={c} onDone={() => markDone(c)} onDelete={() => remove(c)} />
-            ))}
-          </div>
-        )}
+        <div className="grid lg:grid-cols-2 gap-8">
+          <AgendaColumna titulo="Agenda de Cristina" citas={cristinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} />
+          <AgendaColumna titulo="Agenda de Jessie" citas={jessieCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} />
+        </div>
       </main>
+
+      <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
+      <EditCitaModal cita={editing} open={!!editing} onOpenChange={(v) => !v && setEditing(null)} />
     </div>
+  );
+}
+
+function AgendaColumna({
+  titulo,
+  citas,
+  onDone,
+  onDelete,
+  onEdit,
+}: {
+  titulo: string;
+  citas: Cita[];
+  onDone: (c: Cita) => void;
+  onDelete: (c: Cita) => void;
+  onEdit: (c: Cita) => void;
+}) {
+  const ordenadas = [...citas].sort((a, b) =>
+    a.fecha === b.fecha ? a.hora.localeCompare(b.hora) : a.fecha.localeCompare(b.fecha)
+  );
+  return (
+    <section>
+      <h3 className="font-display text-2xl text-background mb-4 flex items-center gap-2">
+        <span className="size-2 rounded-full bg-primary" />
+        {titulo}
+        <span className="text-xs uppercase tracking-[0.2em] text-primary/70">({ordenadas.length})</span>
+      </h3>
+      {ordenadas.length === 0 ? (
+        <div className="border border-dashed border-primary/20 rounded-2xl p-10 text-center">
+          <p className="text-sm text-background/60">Sin citas en esta vista.</p>
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {ordenadas.map((c) => (
+            <CitaCard key={c.id} cita={c} onDone={() => onDone(c)} onDelete={() => onDelete(c)} onEdit={() => onEdit(c)} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -230,7 +282,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
   );
 }
 
-function CitaCard({ cita, onDone, onDelete }: { cita: Cita; onDone: () => void; onDelete: () => void }) {
+function CitaCard({ cita, onDone, onDelete, onEdit }: { cita: Cita; onDone: () => void; onDelete: () => void; onEdit: () => void }) {
   const fechaFmt = (() => {
     try {
       return format(parseISO(cita.fecha), "EEEE d 'de' MMMM yyyy", { locale: es });
@@ -308,6 +360,14 @@ function CitaCard({ cita, onDone, onDelete }: { cita: Cita; onDone: () => void; 
                 <CheckCircle2 className="size-3.5" /> Realizada
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onEdit}
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-[10px] uppercase tracking-[0.2em]"
+            >
+              <Pencil className="size-3.5" /> Modificar
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button

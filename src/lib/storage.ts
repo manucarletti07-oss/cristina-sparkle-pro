@@ -170,9 +170,17 @@ export async function saveCita(
   return { ok: true, cita: toCita(data as Row) };
 }
 
-export async function updateCita(id: string, patch: Partial<Pick<Cita, "estado">>) {
+export async function updateCita(
+  id: string,
+  patch: Partial<Pick<Cita, "estado" | "fecha" | "hora" | "profesional" | "nombre" | "telefono" | "email" | "observaciones">>
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const { error } = await supabase.from("citas").update(patch).eq("id", id);
-  if (error) console.error(error);
+  if (error) {
+    if (error.code === "23505")
+      return { ok: false, error: "Esa profesional ya tiene una cita a esa hora" };
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
 }
 
 export async function deleteCita(id: string) {
