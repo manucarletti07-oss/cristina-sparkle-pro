@@ -16,12 +16,15 @@ export type Database = {
     Tables: {
       citas: {
         Row: {
+          cliente_id: string | null
           created_at: string
+          email: string | null
           estado: string
           fecha: string
           hora: string
           id: string
           nombre: string
+          observaciones: string | null
           profesional: string
           recordatorio_enviado: boolean
           servicios: string[]
@@ -29,12 +32,15 @@ export type Database = {
           total: number
         }
         Insert: {
+          cliente_id?: string | null
           created_at?: string
+          email?: string | null
           estado?: string
           fecha: string
           hora: string
           id?: string
           nombre: string
+          observaciones?: string | null
           profesional?: string
           recordatorio_enviado?: boolean
           servicios?: string[]
@@ -42,17 +48,67 @@ export type Database = {
           total?: number
         }
         Update: {
+          cliente_id?: string | null
           created_at?: string
+          email?: string | null
           estado?: string
           fecha?: string
           hora?: string
           id?: string
           nombre?: string
+          observaciones?: string | null
           profesional?: string
           recordatorio_enviado?: boolean
           servicios?: string[]
           telefono?: string
           total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "citas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clientes: {
+        Row: {
+          alias: string | null
+          apellido_1: string | null
+          apellido_2: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nombre: string
+          observaciones: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          alias?: string | null
+          apellido_1?: string | null
+          apellido_2?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre: string
+          observaciones?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alias?: string | null
+          apellido_1?: string | null
+          apellido_2?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre?: string
+          observaciones?: string | null
+          telefono?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
