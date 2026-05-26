@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
 import { ServiceInfoModal } from "@/components/ServiceInfoModal";
+import { BuyBonoModal } from "@/components/BuyBonoModal";
 import { Button } from "@/components/ui/button";
 import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
 import heroImg from "@/assets/momento.jpg";
@@ -43,6 +44,7 @@ function Index() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
   const [preselected, setPreselected] = useState<(Treatment & { categoria: ServiceCategory }) | null>(null);
+  const [buyBonoOpen, setBuyBonoOpen] = useState(false);
 
   const openInfo = (c: ServiceCategory) => {
     setInfoCategory(c);
@@ -141,27 +143,35 @@ function Index() {
       <section id="promociones" className="py-28 bg-background">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Ofertas exclusivas</span>
+            <span className="text-[11px] tracking-[0.4em] text-primary font-semibold uppercase">Bonos exclusivos</span>
             <h2 className="font-display text-4xl md:text-5xl mt-3 text-foreground">Promociones y Bonos</h2>
             <div className="h-px w-12 bg-primary mx-auto mt-6" />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <PromoCard
-              badge="Recomendado"
-              titulo="Bono Facial VIP"
-              descripcion="Pack de 5 sesiones de vitaminas y peeling ultrasónico."
-              precio={180}
-              antes={225}
-              onBook={openGeneric}
-            />
-            <PromoCard
-              titulo="Bono Maderoterapia"
-              descripcion="10 sesiones intensivas para reducir y reafirmar."
-              precio={350}
-              antes={450}
-              onBook={openGeneric}
-            />
+          <div className="max-w-md mx-auto">
+            <div className="relative bg-secondary border border-primary/15 rounded-3xl p-10 text-center transition-all duration-500 hover:border-primary hover:-translate-y-2 hover:gold-shadow">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] font-semibold">
+                Más vendido
+              </span>
+              <h3 className="font-display text-3xl text-foreground">Bono de 10 sesiones</h3>
+              <p className="text-sm text-muted-foreground mt-3 max-w-xs mx-auto">
+                Reserva cualquier tratamiento y aplica una sesión del bono al pagar. Se descuenta automáticamente.
+              </p>
+              <div className="my-7">
+                <span className="font-display text-6xl text-foreground">150€</span>
+              </div>
+              <ul className="text-sm text-foreground/75 mb-7 space-y-1">
+                <li>10 sesiones a tu nombre</li>
+                <li>Válido para cualquier tratamiento</li>
+                <li>Vinculado a tu teléfono</li>
+              </ul>
+              <Button
+                onClick={() => setBuyBonoOpen(true)}
+                className="bg-foreground text-background hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.25em] rounded-full px-8"
+              >
+                Comprar bono
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -249,44 +259,8 @@ function Index() {
         category={infoCategory}
         onBook={openBookingFor}
       />
+      <BuyBonoModal open={buyBonoOpen} onOpenChange={setBuyBonoOpen} />
     </div>
   );
 }
 
-function PromoCard({
-  badge,
-  titulo,
-  descripcion,
-  precio,
-  antes,
-  onBook,
-}: {
-  badge?: string;
-  titulo: string;
-  descripcion: string;
-  precio: number;
-  antes: number;
-  onBook: () => void;
-}) {
-  return (
-    <div className="relative bg-secondary border border-primary/15 rounded-3xl p-10 text-center transition-all duration-500 hover:border-primary hover:-translate-y-2 hover:gold-shadow">
-      {badge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] font-semibold">
-          {badge}
-        </span>
-      )}
-      <h3 className="font-display text-2xl text-foreground">{titulo}</h3>
-      <p className="text-sm text-muted-foreground mt-3 max-w-xs mx-auto">{descripcion}</p>
-      <div className="my-7">
-        <span className="font-display text-5xl text-foreground">{precio}€</span>
-        <span className="text-lg line-through text-muted-foreground/70 ml-3">{antes}€</span>
-      </div>
-      <Button
-        onClick={onBook}
-        className="bg-foreground text-background hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.25em] rounded-full px-8"
-      >
-        Quiero este bono
-      </Button>
-    </div>
-  );
-}

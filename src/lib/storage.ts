@@ -54,6 +54,7 @@ export type Cita = {
   profesional: Profesional;
   total: number;
   estado: "pendiente" | "realizada";
+  bonoId?: string | null;
   createdAt: string;
 };
 
@@ -70,6 +71,7 @@ type Row = {
   profesional: Profesional;
   total: number;
   estado: "pendiente" | "realizada";
+  bono_id: string | null;
   created_at: string;
 };
 
@@ -86,6 +88,7 @@ const toCita = (r: Row): Cita => ({
   profesional: (r.profesional ?? "cristina") as Profesional,
   total: Number(r.total),
   estado: r.estado,
+  bonoId: r.bono_id,
   createdAt: r.created_at,
 });
 
@@ -159,6 +162,7 @@ export async function saveCita(
       hora: cita.hora,
       profesional: cita.profesional,
       total: cita.total,
+      bono_id: cita.bonoId ?? null,
     })
     .select("*")
     .single();
@@ -215,4 +219,104 @@ export async function searchClientes(q: string, limit = 8): Promise<Cliente[]> {
     return [];
   }
   return (data as Cliente[]) ?? [];
+}
+
+// ====== BONOS ======
+export type Bono = {
+  id: string;
+  clienteId: string;
+  nombre: string;
+  totalSesiones: number;
+  sesionesRestantes: number;
+  precio: number;
+  estado: "activo" | "agotado";
+  fechaCompra: string;
+};
+
+type BonoRow = {
+  id: string;
+  cliente_id: string;
+  nombre: string;
+  total_sesiones: number;
+  sesiones_restantes: number;
+  precio: number;
+  estado: "activo" | "agotado";
+  fecha_compra: string;
+};
+
+const toBono = (r: BonoRow): Bono => ({
+  id: r.id,
+  clienteId: r.cliente_id,
+  nombre: r.nombre,
+  totalSesiones: r.total_sesiones,
+  sesionesRestantes: r.sesiones_restantes,
+  precio: Number(r.precio),
+  estado: r.estado,
+  fechaCompra: r.fecha_compra,
+});
+
+/** Busca/crea cliente por teléfono y devuelve su id. */
+async function ensureClienteByTelefono(nombre: string, telefono: string, email?: string | null) {
+  const tel = telefono.trim();
+  if (!tel) return null;
+  const { data: existing } = await supabase
+    .from("clientes")
+    .select("id")
+    .eq("telefono", tel)
+    .maybeSingle();
+  if (existing) return existing.id as string;
+  const { data: nuevo } = await supabase
+    .from("clientes")
+    .insert({ nombre: nombre.trim(), telefono: tel, email: email ?? null })
+    .select("id")
+    .single();
+  return (nuevo?.id as string) ?? null;
+}
+
+export async function comprarBono(input: {
+  nombre: string;
+  telefono: string;
+  email?: string | null;
+}): Promise<{ ok: true; bono: Bono } | { ok: false; error: string }> {
+  const clienteId = await ensureClienteByTelefono(input.nombre, input.telefono, input.email);
+  if (!clienteId) return { ok: false, error: "Indica nombre y teléfono" };
+  const { data, error } = await supabase
+    .from("bonos")
+    .insert({ cliente_id: clienteId })
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, bono: toBono(data as BonoRow) };
+}
+
+/** Bono activo del cliente identificado por teléfono. */
+export async function getBonoActivoByTelefono(telefono: string): Promise<Bono | null> {
+  const tel = telefono.trim();
+  if (!tel) return null;
+  const { data: cli } = await supabase
+    .from("clientes")
+    .select("id")
+    .eq("telefono", tel)
+    .maybeSingle();
+  if (!cli) return null;
+  const { data } = await supabase
+    .from("bonos")
+    .select("*")
+    .eq("cliente_id", cli.id)
+    .eq("estado", "activo")
+    .gt("sesiones_restantes", 0)
+    .order("fecha_compra", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ? toBono(data as BonoRow) : null;
+}
+
+export async function getBonosByCliente(clienteId: string): Promise<Bono[]> {
+  const { data, error } = await supabase
+    .from("bonos")
+    .select("*")
+    .eq("cliente_id", clienteId)
+    .order("fecha_compra", { ascending: false });
+  if (error) return [];
+  return (data as BonoRow[]).map(toBono);
 }

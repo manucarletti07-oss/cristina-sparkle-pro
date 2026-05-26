@@ -14,8 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      bonos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          estado: string
+          fecha_compra: string
+          id: string
+          nombre: string
+          precio: number
+          sesiones_restantes: number
+          total_sesiones: number
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          estado?: string
+          fecha_compra?: string
+          id?: string
+          nombre?: string
+          precio?: number
+          sesiones_restantes?: number
+          total_sesiones?: number
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          estado?: string
+          fecha_compra?: string
+          id?: string
+          nombre?: string
+          precio?: number
+          sesiones_restantes?: number
+          total_sesiones?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       citas: {
         Row: {
+          bono_id: string | null
           cliente_id: string | null
           created_at: string
           email: string | null
@@ -32,6 +77,7 @@ export type Database = {
           total: number
         }
         Insert: {
+          bono_id?: string | null
           cliente_id?: string | null
           created_at?: string
           email?: string | null
@@ -48,6 +94,7 @@ export type Database = {
           total?: number
         }
         Update: {
+          bono_id?: string | null
           cliente_id?: string | null
           created_at?: string
           email?: string | null
@@ -64,6 +111,13 @@ export type Database = {
           total?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "citas_bono_id_fkey"
+            columns: ["bono_id"]
+            isOneToOne: false
+            referencedRelation: "bonos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "citas_cliente_id_fkey"
             columns: ["cliente_id"]

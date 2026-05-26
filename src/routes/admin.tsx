@@ -33,7 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { deleteCita, getCitas, updateCita, type Cita } from "@/lib/storage";
+import { deleteCita, getCitas, updateCita, type Cita, type Bono } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
@@ -55,6 +55,7 @@ function Admin() {
   const { isAuth, logout } = useAuth();
   const navigate = useNavigate();
   const [citas, setCitas] = useState<Cita[]>([]);
+  const [bonos, setBonos] = useState<Bono[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
   const today = new Date().toISOString().slice(0, 10);
   const [query, setQuery] = useState(today);
@@ -70,6 +71,24 @@ function Admin() {
     }
     const load = () => {
       getCitas().then(setCitas);
+      supabase
+        .from("bonos")
+        .select("*")
+        .then(({ data }) => {
+          if (!data) return;
+          setBonos(
+            data.map((r: any) => ({
+              id: r.id,
+              clienteId: r.cliente_id,
+              nombre: r.nombre,
+              totalSesiones: r.total_sesiones,
+              sesionesRestantes: r.sesiones_restantes,
+              precio: Number(r.precio),
+              estado: r.estado,
+              fechaCompra: r.fecha_compra,
+            }))
+          );
+        });
     };
     load();
     const channel = supabase
@@ -77,6 +96,11 @@ function Admin() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "citas" },
+        () => load()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bonos" },
         () => load()
       )
       .subscribe();
@@ -131,6 +155,19 @@ function Admin() {
 
   const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
   const jessieCitas = visible.filter((c) => c.profesional === "jessie");
+
+  // Bono activo por cliente (más reciente, con sesiones > 0)
+  const bonoActivoByCliente = useMemo(() => {
+    const map = new Map<string, Bono>();
+    for (const b of bonos) {
+      if (b.estado !== "activo" || b.sesionesRestantes <= 0) continue;
+      const existing = map.get(b.clienteId);
+      if (!existing || b.fechaCompra > existing.fechaCompra) map.set(b.clienteId, b);
+    }
+    return map;
+  }, [bonos]);
+
+  const getBonoForCita = (c: Cita) => (c.clienteId ? bonoActivoByCliente.get(c.clienteId) ?? null : null);
 
   return (
     <div className="min-h-screen bg-foreground text-background">
@@ -221,8 +258,8 @@ function Admin() {
 
         {/* LIST */}
         <div className="grid lg:grid-cols-2 gap-8">
-          <AgendaColumna titulo="Agenda de Cristina" citas={cristinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} />
-          <AgendaColumna titulo="Agenda de Jessie" citas={jessieCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} />
+          <AgendaColumna titulo="Agenda de Cristina" citas={cristinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
+          <AgendaColumna titulo="Agenda de Jessie" citas={jessieCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
         </div>
       </main>
 
@@ -238,12 +275,14 @@ function AgendaColumna({
   onDone,
   onDelete,
   onEdit,
+  getBono,
 }: {
   titulo: string;
   citas: Cita[];
   onDone: (c: Cita) => void;
   onDelete: (c: Cita) => void;
   onEdit: (c: Cita) => void;
+  getBono: (c: Cita) => Bono | null;
 }) {
   const ordenadas = [...citas].sort((a, b) =>
     a.fecha === b.fecha ? a.hora.localeCompare(b.hora) : a.fecha.localeCompare(b.fecha)
@@ -262,7 +301,7 @@ function AgendaColumna({
       ) : (
         <div className="grid gap-3">
           {ordenadas.map((c) => (
-            <CitaCard key={c.id} cita={c} onDone={() => onDone(c)} onDelete={() => onDelete(c)} onEdit={() => onEdit(c)} />
+            <CitaCard key={c.id} cita={c} bono={getBono(c)} onDone={() => onDone(c)} onDelete={() => onDelete(c)} onEdit={() => onEdit(c)} />
           ))}
         </div>
       )}
@@ -282,7 +321,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
   );
 }
 
-function CitaCard({ cita, onDone, onDelete, onEdit }: { cita: Cita; onDone: () => void; onDelete: () => void; onEdit: () => void }) {
+function CitaCard({ cita, bono, onDone, onDelete, onEdit }: { cita: Cita; bono: Bono | null; onDone: () => void; onDelete: () => void; onEdit: () => void }) {
   const fechaFmt = (() => {
     try {
       return format(parseISO(cita.fecha), "EEEE d 'de' MMMM yyyy", { locale: es });
@@ -343,6 +382,21 @@ function CitaCard({ cita, onDone, onDelete, onEdit }: { cita: Cita; onDone: () =
               </span>
             ))}
           </div>
+
+          {(bono || cita.bonoId) && (
+            <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+              {cita.bonoId && (
+                <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
+                  Pagada con bono
+                </span>
+              )}
+              {bono && (
+                <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30">
+                  {bono.nombre} activo · {bono.sesionesRestantes}/{bono.totalSesiones} sesiones
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-4 lg:flex-col lg:items-end">
