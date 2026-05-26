@@ -63,12 +63,6 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
               {isAuth ? "Panel" : "Área Interna"}
             </Button>
             <Button
-              onClick={onBookClick}
-              className="bg-foreground text-background hover:bg-primary hover:text-primary-foreground transition-colors text-[10px] uppercase tracking-[0.2em] font-semibold px-4 md:px-5 rounded-full"
-            >
-              Cita Previa
-            </Button>
-            <Button
               variant="ghost"
               size="icon"
               className="lg:hidden"

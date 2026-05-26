@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { SERVICIOS, type ServiceCategory } from "@/lib/config";
+import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
 import {
   generarSlots,
   getOcupadasPorFecha,
@@ -24,6 +25,8 @@ type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   category: ServiceCategory | null;
+  /** Si se pasa, el modal se abre directo al formulario con ese tratamiento fijado. */
+  preselectedTreatment?: (Treatment & { categoria: ServiceCategory }) | null;
 };
 
 const HORAS = generarSlots();
@@ -36,9 +39,11 @@ const CATEGORIAS: { key: ServiceCategory; label: string; icon: typeof Sparkles; 
   { key: "micropigmentacion", label: "Micropigmentación", icon: Brush, desc: "Microblading, eyeliner, lips…" },
 ];
 
-export function BookingModal({ open, onOpenChange, category }: Props) {
+export function BookingModal({ open, onOpenChange, category, preselectedTreatment }: Props) {
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [email, setEmail] = useState("");
+  const [observaciones, setObservaciones] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [fecha, setFecha] = useState<Date | undefined>();
   const [hora, setHora] = useState<string>("");
@@ -48,19 +53,27 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
   const [ocupadas, setOcupadas] = useState<Map<string, Set<Profesional>>>(new Map());
 
   const data = cat ? SERVICIOS[cat] : null;
+  const fixedTreatment = preselectedTreatment ?? null;
 
   useEffect(() => {
     if (open) {
       setStage("form");
-      setSelected([]);
       setNombre("");
       setTelefono("");
+      setEmail("");
+      setObservaciones("");
       setFecha(undefined);
       setHora("");
       setProfesional("cristina");
-      setCat(category ?? null);
+      if (preselectedTreatment) {
+        setCat(preselectedTreatment.categoria);
+        setSelected([preselectedTreatment.nombre]);
+      } else {
+        setCat(category ?? null);
+        setSelected([]);
+      }
     }
-  }, [open, category]);
+  }, [open, category, preselectedTreatment]);
 
   const total = useMemo(
     () =>
@@ -101,6 +114,8 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
     const res = await saveCita({
       nombre: nombre.trim(),
       telefono: telefono.trim(),
+      email: email.trim() || null,
+      observaciones: observaciones.trim() || null,
       servicios: selected,
       fecha: fechaIso,
       hora,
@@ -126,7 +141,7 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
       <DialogContent className="glass max-w-lg max-h-[92vh] overflow-y-auto gold-shadow">
         {stage === "done" ? (
           <ConfirmAnimation onClose={() => onOpenChange(false)} />
-        ) : !cat || !data ? (
+        ) : (!cat || !data) && !fixedTreatment ? (
           <>
             <DialogHeader>
               <DialogTitle className="font-display text-3xl text-foreground">
@@ -161,19 +176,21 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
           <>
             <DialogHeader>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setCat(null); setSelected([]); }}
-                  className="p-1.5 -ml-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                  aria-label="Volver"
-                >
-                  <ArrowLeft className="size-4" />
-                </button>
+                {!fixedTreatment && (
+                  <button
+                    onClick={() => { setCat(null); setSelected([]); }}
+                    className="p-1.5 -ml-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                    aria-label="Volver"
+                  >
+                    <ArrowLeft className="size-4" />
+                  </button>
+                )}
                 <DialogTitle className="font-display text-3xl text-foreground">
                   Reserva tu Cita
                 </DialogTitle>
               </div>
               <DialogDescription>
-                {data.titulo} · selecciona tratamientos y elige fecha
+                {fixedTreatment ? `${fixedTreatment.nombre}` : `${data?.titulo} · selecciona tratamientos`}
               </DialogDescription>
             </DialogHeader>
 
@@ -187,6 +204,11 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
                   <Label>Teléfono</Label>
                   <Input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="600 000 000" />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Email <span className="text-muted-foreground font-normal">(opcional, para recordatorio)</span></Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tucorreo@ejemplo.com" />
               </div>
 
               <div className="space-y-2">
@@ -276,26 +298,45 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
 
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-[0.2em] text-primary">Tratamientos</Label>
-                <div className="divide-y divide-primary/15 rounded-xl border border-primary/15 bg-background/40">
-                  {data.treatments.map((t) => {
-                    const checked = selected.includes(t.nombre);
-                    return (
-                      <label
-                        key={t.nombre}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-3 cursor-pointer transition-colors",
-                          checked ? "bg-primary/10" : "hover:bg-primary/5"
-                        )}
-                      >
-                        <span className="flex items-center gap-3 text-sm">
-                          <Checkbox checked={checked} onCheckedChange={() => toggle(t.nombre)} />
-                          {t.nombre}
-                        </span>
-                        <span className="font-semibold text-primary">{t.precio}€</span>
-                      </label>
-                    );
-                  })}
-                </div>
+                {fixedTreatment ? (
+                  <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 px-4 py-3">
+                    <span className="text-sm text-foreground">{fixedTreatment.nombre}</span>
+                    <span className="font-semibold text-primary">
+                      {fixedTreatment.desde ? "desde " : ""}{fixedTreatment.precio}€
+                    </span>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-primary/15 rounded-xl border border-primary/15 bg-background/40">
+                    {data!.treatments.map((t) => {
+                      const checked = selected.includes(t.nombre);
+                      return (
+                        <label
+                          key={t.nombre}
+                          className={cn(
+                            "flex items-center justify-between px-4 py-3 cursor-pointer transition-colors",
+                            checked ? "bg-primary/10" : "hover:bg-primary/5"
+                          )}
+                        >
+                          <span className="flex items-center gap-3 text-sm">
+                            <Checkbox checked={checked} onCheckedChange={() => toggle(t.nombre)} />
+                            {t.nombre}
+                          </span>
+                          <span className="font-semibold text-primary">{t.precio}€</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Observaciones <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                <Textarea
+                  value={observaciones}
+                  onChange={(e) => setObservaciones(e.target.value)}
+                  placeholder="Alguna alergia, preferencia o nota para Cristina…"
+                  rows={2}
+                />
               </div>
 
               <div className="flex items-center justify-between bg-foreground text-background rounded-xl px-5 py-4">

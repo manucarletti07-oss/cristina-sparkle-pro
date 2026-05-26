@@ -45,6 +45,9 @@ export type Cita = {
   id: string;
   nombre: string;
   telefono: string;
+  email?: string | null;
+  observaciones?: string | null;
+  clienteId?: string | null;
   servicios: string[];
   fecha: string;
   hora: string;
@@ -58,6 +61,9 @@ type Row = {
   id: string;
   nombre: string;
   telefono: string;
+  email: string | null;
+  observaciones: string | null;
+  cliente_id: string | null;
   servicios: string[];
   fecha: string;
   hora: string;
@@ -71,6 +77,9 @@ const toCita = (r: Row): Cita => ({
   id: r.id,
   nombre: r.nombre,
   telefono: r.telefono,
+  email: r.email,
+  observaciones: r.observaciones,
+  clienteId: r.cliente_id,
   servicios: r.servicios ?? [],
   fecha: r.fecha,
   hora: r.hora,
@@ -117,11 +126,34 @@ export async function getOcupadasPorFecha(
 export async function saveCita(
   cita: Omit<Cita, "id" | "createdAt" | "estado">
 ): Promise<{ ok: true; cita: Cita } | { ok: false; error: string }> {
+  // Busca o crea cliente por teléfono
+  const tel = cita.telefono.trim();
+  let clienteId = cita.clienteId ?? null;
+  if (!clienteId && tel) {
+    const { data: existing } = await supabase
+      .from("clientes")
+      .select("id")
+      .eq("telefono", tel)
+      .maybeSingle();
+    if (existing) clienteId = existing.id;
+    else {
+      const { data: nuevo } = await supabase
+        .from("clientes")
+        .insert({ nombre: cita.nombre.trim(), telefono: tel, email: cita.email ?? null })
+        .select("id")
+        .single();
+      clienteId = nuevo?.id ?? null;
+    }
+  }
+
   const { data, error } = await supabase
     .from("citas")
     .insert({
       nombre: cita.nombre,
       telefono: cita.telefono,
+      email: cita.email ?? null,
+      observaciones: cita.observaciones ?? null,
+      cliente_id: clienteId,
       servicios: cita.servicios,
       fecha: cita.fecha,
       hora: cita.hora,
@@ -146,4 +178,33 @@ export async function updateCita(id: string, patch: Partial<Pick<Cita, "estado">
 export async function deleteCita(id: string) {
   const { error } = await supabase.from("citas").delete().eq("id", id);
   if (error) console.error(error);
+}
+
+// ====== CLIENTES ======
+export type Cliente = {
+  id: string;
+  nombre: string;
+  apellido_1: string | null;
+  apellido_2: string | null;
+  telefono: string | null;
+  email: string | null;
+  alias: string | null;
+  observaciones: string | null;
+};
+
+export async function searchClientes(q: string, limit = 8): Promise<Cliente[]> {
+  const term = q.trim();
+  if (!term) return [];
+  const { data, error } = await supabase
+    .from("clientes")
+    .select("id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones")
+    .or(
+      `nombre.ilike.%${term}%,alias.ilike.%${term}%,telefono.ilike.%${term}%,apellido_1.ilike.%${term}%`
+    )
+    .limit(limit);
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return (data as Cliente[]) ?? [];
 }

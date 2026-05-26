@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
 import { ServiceInfoModal } from "@/components/ServiceInfoModal";
 import { Button } from "@/components/ui/button";
-import { SERVICIOS, type ServiceCategory } from "@/lib/config";
+import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
 import heroImg from "@/assets/momento.jpg";
 import facialImg from "@/assets/facial-trabajo.jpg";
 import corporalImg from "@/assets/cabina.jpg";
@@ -42,6 +42,7 @@ function Index() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
+  const [preselected, setPreselected] = useState<(Treatment & { categoria: ServiceCategory }) | null>(null);
 
   const openInfo = (c: ServiceCategory) => {
     setInfoCategory(c);
@@ -49,6 +50,12 @@ function Index() {
   };
 
   const openGeneric = () => {
+    setPreselected(null);
+    setBookingOpen(true);
+  };
+
+  const openBookingFor = (t: Treatment & { categoria: ServiceCategory }) => {
+    setPreselected(t);
     setBookingOpen(true);
   };
 
@@ -86,13 +93,6 @@ function Index() {
                 Ver Tratamientos <ArrowRight className="size-4" />
               </Button>
             </a>
-            <Button
-              variant="outline"
-              onClick={openGeneric}
-              className="h-12 px-8 border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary text-xs uppercase tracking-[0.25em] rounded-full bg-background/70 backdrop-blur"
-            >
-              Reservar Ahora
-            </Button>
           </div>
         </div>
       </section>
@@ -237,12 +237,17 @@ function Index() {
 
       <Footer />
 
-      <BookingModal open={bookingOpen} onOpenChange={setBookingOpen} category={null} />
+      <BookingModal
+        open={bookingOpen}
+        onOpenChange={setBookingOpen}
+        category={null}
+        preselectedTreatment={preselected}
+      />
       <ServiceInfoModal
         open={infoOpen}
         onOpenChange={setInfoOpen}
         category={infoCategory}
-        onBook={openGeneric}
+        onBook={openBookingFor}
       />
     </div>
   );
