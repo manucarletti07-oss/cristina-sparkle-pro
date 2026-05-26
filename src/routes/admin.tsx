@@ -332,125 +332,135 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit }: { cita: Cita; bono: 
 
   return (
     <div className={cn(
-      "glass-dark rounded-2xl p-6 transition-all",
-      cita.estado === "realizada" && "opacity-70"
+      "group relative rounded-2xl border border-primary/15 bg-gradient-to-br from-background/[0.07] to-background/[0.02] backdrop-blur-xl p-6 transition-all hover:border-primary/50 hover:shadow-[0_10px_40px_-10px_rgba(212,175,107,0.35)] hover:-translate-y-0.5",
+      cita.estado === "realizada" && "opacity-60"
     )}>
-      <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h3 className="font-display text-2xl text-background flex items-center gap-2">
-              <UserIcon className="size-4 text-primary" />
-              {cita.nombre}
-            </h3>
-            {cita.estado === "realizada" ? (
-              <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/20">
-                Realizada
-              </Badge>
-            ) : (
-              <Badge className="bg-primary/20 text-primary border border-primary/40 hover:bg-primary/20">
-                Pendiente
-              </Badge>
-            )}
+      {/* Banda lateral de color según estado */}
+      <span className={cn(
+        "absolute left-0 top-6 bottom-6 w-1 rounded-r-full",
+        cita.estado === "realizada" ? "bg-emerald-400/60" : "bg-primary"
+      )} />
+
+      <div className="grid lg:grid-cols-[1fr_auto] gap-6">
+        {/* Columna principal */}
+        <div className="space-y-3 pl-3">
+          {/* Cabecera: nombre + estado + hora destacada */}
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-display text-2xl text-background leading-tight">
+                  {cita.nombre}
+                </h3>
+                {cita.estado === "realizada" ? (
+                  <Badge className="bg-emerald-500/15 text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/15 text-[10px] uppercase tracking-[0.18em]">
+                    Realizada
+                  </Badge>
+                ) : (
+                  <Badge className="bg-primary/20 text-primary border border-primary/40 hover:bg-primary/20 text-[10px] uppercase tracking-[0.18em] animate-pulse">
+                    Pendiente
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-background/55 mt-0.5 capitalize">{fechaFmt}</p>
+            </div>
+
+            {/* Hora grande tipo "ticket" */}
+            <div className="flex items-center gap-3 rounded-xl bg-foreground/40 border border-primary/30 px-4 py-2">
+              <Clock className="size-4 text-primary" />
+              <span className="font-display text-2xl text-background leading-none tracking-wide">{cita.hora}</span>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-4 text-sm text-background/75">
-            <span className="flex items-center gap-1.5">
-              <CalendarIcon className="size-3.5 text-primary" /> {fechaFmt}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="size-3.5 text-primary" /> {cita.hora}
-            </span>
+          {/* Datos de contacto */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-background/75">
             <span className="flex items-center gap-1.5">
               <UserIcon className="size-3.5 text-primary" />
-              {cita.profesional === "cristina" ? "Cristina" : "Jessie"}
+              <span className="capitalize">{cita.profesional}</span>
             </span>
             <a
               href={`tel:${cita.telefono.replace(/\s/g, "")}`}
-              className="flex items-center gap-1.5 hover:text-primary"
+              className="flex items-center gap-1.5 hover:text-primary transition-colors"
             >
               <Phone className="size-3.5 text-primary" /> {cita.telefono}
             </a>
+            <span className="flex items-center gap-1.5 text-primary font-semibold">
+              <Euro className="size-3.5" /> {cita.total}€
+            </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 pt-1">
+          {/* Servicios */}
+          <div className="flex flex-wrap gap-1.5">
             {cita.servicios.map((s) => (
               <span
                 key={s}
-                className="text-[11px] px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30"
+                className="text-[11px] px-2.5 py-1 rounded-full bg-primary/10 text-primary/90 border border-primary/25"
               >
                 {s}
               </span>
             ))}
           </div>
 
+          {/* Bono badges */}
           {(bono || cita.bonoId) && (
-            <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+            <div className="flex flex-wrap gap-2 text-[11px]">
               {cita.bonoId && (
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
-                  Pagada con bono
+                <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 font-medium">
+                  ✓ Pagada con bono
                 </span>
               )}
               {bono && (
-                <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30">
-                  {bono.nombre} activo · {bono.sesionesRestantes}/{bono.totalSesiones} sesiones
+                <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30 font-medium">
+                  Bono · {bono.sesionesRestantes}/{bono.totalSesiones} sesiones
                 </span>
               )}
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-4 lg:flex-col lg:items-end">
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-primary">Total</p>
-            <p className="font-display text-3xl text-background">{cita.total}€</p>
-          </div>
-          <div className="flex gap-2">
-            {cita.estado === "pendiente" && (
-              <Button
-                size="sm"
-                onClick={onDone}
-                className="bg-emerald-500/90 text-white hover:bg-emerald-500 text-[10px] uppercase tracking-[0.2em]"
-              >
-                <CheckCircle2 className="size-3.5" /> Realizada
-              </Button>
-            )}
+        {/* Columna de acciones - botones grandes y visibles */}
+        <div className="flex lg:flex-col gap-2 lg:min-w-[170px] lg:border-l lg:border-primary/15 lg:pl-5">
+          {cita.estado === "pendiente" && (
             <Button
-              size="sm"
-              variant="outline"
-              onClick={onEdit}
-              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-[10px] uppercase tracking-[0.2em]"
+              onClick={onDone}
+              className="flex-1 lg:w-full justify-center bg-emerald-500 text-white hover:bg-emerald-600 shadow-md font-semibold"
             >
-              <Pencil className="size-3.5" /> Modificar
+              <CheckCircle2 className="size-4" /> Realizada
             </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-destructive/40 text-destructive bg-transparent hover:bg-destructive hover:text-destructive-foreground text-[10px] uppercase tracking-[0.2em]"
+          )}
+          <Button
+            variant="outline"
+            onClick={onEdit}
+            className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
+          >
+            <Pencil className="size-4" /> Modificar
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex-1 lg:w-full justify-center border-destructive/50 text-destructive bg-transparent hover:bg-destructive hover:text-destructive-foreground font-medium"
+              >
+                <Trash2 className="size-4" /> Eliminar
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-display">¿Eliminar esta cita?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Se eliminará la reserva de <strong>{cita.nombre}</strong> ({fechaFmt}, {cita.hora}). Esta acción no se puede deshacer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={onDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  <Trash2 className="size-3.5" /> Eliminar
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="font-display">¿Eliminar esta cita?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Se eliminará la reserva de <strong>{cita.nombre}</strong> ({fechaFmt}, {cita.hora}). Esta acción no se puede deshacer.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={onDelete}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Eliminar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+                  Eliminar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
