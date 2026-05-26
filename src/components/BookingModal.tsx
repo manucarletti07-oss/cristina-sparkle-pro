@@ -18,6 +18,8 @@ import {
   getOcupadasPorFecha,
   PROFESIONALES,
   saveCita,
+  getBonoActivoByTelefono,
+  type Bono,
   type Profesional,
 } from "@/lib/storage";
 
@@ -51,6 +53,8 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
   const [stage, setStage] = useState<"form" | "loading" | "done">("form");
   const [cat, setCat] = useState<ServiceCategory | null>(null);
   const [ocupadas, setOcupadas] = useState<Map<string, Set<Profesional>>>(new Map());
+  const [bonoActivo, setBonoActivo] = useState<Bono | null>(null);
+  const [usarBono, setUsarBono] = useState(false);
 
   const data = cat ? SERVICIOS[cat] : null;
   const fixedTreatment = preselectedTreatment ?? null;
@@ -65,6 +69,8 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       setFecha(undefined);
       setHora("");
       setProfesional("cristina");
+      setBonoActivo(null);
+      setUsarBono(false);
       if (preselectedTreatment) {
         setCat(preselectedTreatment.categoria);
         setSelected([preselectedTreatment.nombre]);
@@ -82,6 +88,21 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
         .reduce((s, t) => s + t.precio, 0),
     [selected, data]
   );
+
+  // Buscar bono activo cuando hay teléfono
+  useEffect(() => {
+    const t = telefono.trim();
+    if (t.length < 6) {
+      setBonoActivo(null);
+      setUsarBono(false);
+      return;
+    }
+    let cancel = false;
+    getBonoActivoByTelefono(t).then((b) => {
+      if (!cancel) setBonoActivo(b);
+    });
+    return () => { cancel = true; };
+  }, [telefono]);
 
   const fechaIsoSel = fecha ? format(fecha, "yyyy-MM-dd") : "";
   useEffect(() => {
@@ -120,7 +141,8 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       fecha: fechaIso,
       hora,
       profesional,
-      total,
+      total: usarBono && bonoActivo ? 0 : total,
+      bonoId: usarBono && bonoActivo ? bonoActivo.id : null,
     });
     if (!res.ok) {
       setStage("form");
