@@ -282,7 +282,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
   );
 }
 
-function CitaCard({ cita, onDone, onDelete }: { cita: Cita; onDone: () => void; onDelete: () => void }) {
+function CitaCard({ cita, onDone, onDelete, onEdit }: { cita: Cita; onDone: () => void; onDelete: () => void; onEdit: () => void }) {
   const fechaFmt = (() => {
     try {
       return format(parseISO(cita.fecha), "EEEE d 'de' MMMM yyyy", { locale: es });
@@ -360,6 +360,14 @@ function CitaCard({ cita, onDone, onDelete }: { cita: Cita; onDone: () => void; 
                 <CheckCircle2 className="size-3.5" /> Realizada
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onEdit}
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-[10px] uppercase tracking-[0.2em]"
+            >
+              <Pencil className="size-3.5" /> Modificar
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
