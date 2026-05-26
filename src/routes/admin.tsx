@@ -52,7 +52,8 @@ function Admin() {
   const navigate = useNavigate();
   const [citas, setCitas] = useState<Cita[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
-  const [query, setQuery] = useState("");
+  const today = new Date().toISOString().slice(0, 10);
+  const [query, setQuery] = useState(today);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
