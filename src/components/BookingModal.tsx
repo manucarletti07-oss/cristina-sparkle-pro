@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { SERVICIOS, type ServiceCategory } from "@/lib/config";
+import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
 import {
   generarSlots,
   getOcupadasPorFecha,
@@ -24,6 +25,8 @@ type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   category: ServiceCategory | null;
+  /** Si se pasa, el modal se abre directo al formulario con ese tratamiento fijado. */
+  preselectedTreatment?: (Treatment & { categoria: ServiceCategory }) | null;
 };
 
 const HORAS = generarSlots();
@@ -36,9 +39,11 @@ const CATEGORIAS: { key: ServiceCategory; label: string; icon: typeof Sparkles; 
   { key: "micropigmentacion", label: "Micropigmentación", icon: Brush, desc: "Microblading, eyeliner, lips…" },
 ];
 
-export function BookingModal({ open, onOpenChange, category }: Props) {
+export function BookingModal({ open, onOpenChange, category, preselectedTreatment }: Props) {
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [email, setEmail] = useState("");
+  const [observaciones, setObservaciones] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [fecha, setFecha] = useState<Date | undefined>();
   const [hora, setHora] = useState<string>("");
@@ -48,19 +53,27 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
   const [ocupadas, setOcupadas] = useState<Map<string, Set<Profesional>>>(new Map());
 
   const data = cat ? SERVICIOS[cat] : null;
+  const fixedTreatment = preselectedTreatment ?? null;
 
   useEffect(() => {
     if (open) {
       setStage("form");
-      setSelected([]);
       setNombre("");
       setTelefono("");
+      setEmail("");
+      setObservaciones("");
       setFecha(undefined);
       setHora("");
       setProfesional("cristina");
-      setCat(category ?? null);
+      if (preselectedTreatment) {
+        setCat(preselectedTreatment.categoria);
+        setSelected([preselectedTreatment.nombre]);
+      } else {
+        setCat(category ?? null);
+        setSelected([]);
+      }
     }
-  }, [open, category]);
+  }, [open, category, preselectedTreatment]);
 
   const total = useMemo(
     () =>
@@ -101,6 +114,8 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
     const res = await saveCita({
       nombre: nombre.trim(),
       telefono: telefono.trim(),
+      email: email.trim() || null,
+      observaciones: observaciones.trim() || null,
       servicios: selected,
       fecha: fechaIso,
       hora,
