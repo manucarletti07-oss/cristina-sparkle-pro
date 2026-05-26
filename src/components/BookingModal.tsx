@@ -361,9 +361,29 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                 />
               </div>
 
+              {bonoActivo && (
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">
+                    Bono disponible
+                  </p>
+                  <p className="text-sm text-foreground">
+                    {bonoActivo.nombre} · <strong>{bonoActivo.sesionesRestantes}</strong> sesiones restantes
+                  </p>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={usarBono}
+                      onCheckedChange={(v) => setUsarBono(!!v)}
+                    />
+                    Usar 1 sesión del bono en esta cita
+                  </label>
+                </div>
+              )}
+
               <div className="flex items-center justify-between bg-foreground text-background rounded-xl px-5 py-4">
                 <span className="text-xs uppercase tracking-[0.25em] text-primary">Total</span>
-                <span className="font-display text-2xl">{total}€</span>
+                <span className="font-display text-2xl">
+                  {usarBono && bonoActivo ? "Bono" : `${total}€`}
+                </span>
               </div>
 
               <Button
