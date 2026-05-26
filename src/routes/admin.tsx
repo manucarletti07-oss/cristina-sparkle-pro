@@ -12,9 +12,11 @@ import {
   Trash2,
   User as UserIcon,
   Sparkles,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +52,7 @@ function Admin() {
   const navigate = useNavigate();
   const [citas, setCitas] = useState<Cita[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
+  const [query, setQuery] = useState("");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -84,8 +87,21 @@ function Admin() {
   }, [citas]);
 
   const visible = useMemo(
-    () => (filter === "todas" ? citas : citas.filter((c) => c.estado === filter)),
-    [citas, filter]
+    () => {
+      const q = query.trim().toLowerCase();
+      return citas
+        .filter((c) => (filter === "todas" ? true : c.estado === filter))
+        .filter((c) => {
+          if (!q) return true;
+          return (
+            c.nombre.toLowerCase().includes(q) ||
+            c.telefono.toLowerCase().includes(q) ||
+            c.fecha.includes(q) ||
+            c.profesional.toLowerCase().includes(q)
+          );
+        });
+    },
+    [citas, filter, query]
   );
 
   const handleLogout = async () => {
@@ -135,6 +151,17 @@ function Admin() {
           <h2 className="font-display text-4xl md:text-5xl mt-2 text-background">Tu agenda de citas</h2>
         </div>
 
+        {/* SEARCH */}
+        <div className="mb-8 relative max-w-xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre, teléfono, fecha (2026-05-30) o profesional…"
+            className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
+          />
+        </div>
+
         {/* STATS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           <StatCard label="Total citas" value={String(stats.total)} icon={<CalendarIcon className="size-4" />} />
@@ -169,9 +196,13 @@ function Admin() {
         {visible.length === 0 ? (
           <div className="border border-dashed border-primary/30 rounded-3xl p-16 text-center">
             <CalendarIcon className="size-10 text-primary mx-auto mb-4" />
-            <p className="font-display text-2xl text-background">Sin citas todavía</p>
+            <p className="font-display text-2xl text-background">
+              {query ? "Sin resultados" : "Sin citas todavía"}
+            </p>
             <p className="text-sm text-background/60 mt-2">
-              Las reservas de tus clientas aparecerán aquí automáticamente.
+              {query
+                ? "Prueba con otro nombre, teléfono o fecha."
+                : "Las reservas de tus clientas aparecerán aquí automáticamente."}
             </p>
           </div>
         ) : (
@@ -236,6 +267,10 @@ function CitaCard({ cita, onDone, onDelete }: { cita: Cita; onDone: () => void; 
             </span>
             <span className="flex items-center gap-1.5">
               <Clock className="size-3.5 text-primary" /> {cita.hora}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <UserIcon className="size-3.5 text-primary" />
+              {cita.profesional === "cristina" ? "Cristina" : "Jessie"}
             </span>
             <a
               href={`tel:${cita.telefono.replace(/\s/g, "")}`}
