@@ -22,6 +22,8 @@ export type Database = {
           hora: string
           id: string
           nombre: string
+          profesional: string
+          recordatorio_enviado: boolean
           servicios: string[]
           telefono: string
           total: number
@@ -33,6 +35,8 @@ export type Database = {
           hora: string
           id?: string
           nombre: string
+          profesional?: string
+          recordatorio_enviado?: boolean
           servicios?: string[]
           telefono: string
           total?: number
@@ -44,6 +48,8 @@ export type Database = {
           hora?: string
           id?: string
           nombre?: string
+          profesional?: string
+          recordatorio_enviado?: boolean
           servicios?: string[]
           telefono?: string
           total?: number
