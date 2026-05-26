@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, CalendarIcon, Check, Loader2, Sparkles, Waves, Scissors, Hand, Brush } from "lucide-react";
+import { ArrowLeft, CalendarIcon, Check, Loader2, Sparkles, Waves, Scissors, Hand, Brush, User } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { SERVICIOS, type ServiceCategory } from "@/lib/config";
-import { getOcupadasPorFecha, saveCita } from "@/lib/storage";
+import {
+  generarSlots,
+  getOcupadasPorFecha,
+  PROFESIONALES,
+  saveCita,
+  type Profesional,
+} from "@/lib/storage";
 
 type Props = {
   open: boolean;
@@ -20,10 +26,7 @@ type Props = {
   category: ServiceCategory | null;
 };
 
-const HORAS = [
-  "10:00", "10:30", "11:00", "11:30", "12:00", "12:30",
-  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-];
+const HORAS = generarSlots();
 
 const CATEGORIAS: { key: ServiceCategory; label: string; icon: typeof Sparkles; desc: string }[] = [
   { key: "facial", label: "Faciales", icon: Sparkles, desc: "Limpieza, radiofrecuencia, dermapen…" },
@@ -39,9 +42,10 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [fecha, setFecha] = useState<Date | undefined>();
   const [hora, setHora] = useState<string>("");
+  const [profesional, setProfesional] = useState<Profesional>("cristina");
   const [stage, setStage] = useState<"form" | "loading" | "done">("form");
   const [cat, setCat] = useState<ServiceCategory | null>(null);
-  const [horasOcupadas, setHorasOcupadas] = useState<Set<string>>(new Set());
+  const [ocupadas, setOcupadas] = useState<Map<string, Set<Profesional>>>(new Map());
 
   const data = cat ? SERVICIOS[cat] : null;
 
@@ -53,6 +57,7 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
       setTelefono("");
       setFecha(undefined);
       setHora("");
+      setProfesional("cristina");
       setCat(category ?? null);
     }
   }, [open, category]);
@@ -68,11 +73,18 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
   const fechaIsoSel = fecha ? format(fecha, "yyyy-MM-dd") : "";
   useEffect(() => {
     if (!fechaIsoSel) {
-      setHorasOcupadas(new Set());
+      setOcupadas(new Map());
       return;
     }
-    getOcupadasPorFecha(fechaIsoSel).then(setHorasOcupadas);
+    getOcupadasPorFecha(fechaIsoSel).then(setOcupadas);
   }, [fechaIsoSel]);
+
+  // Si cambia profesional u hora y deja de estar disponible, limpiar hora.
+  useEffect(() => {
+    if (hora && ocupadas.get(hora)?.has(profesional)) {
+      setHora("");
+    }
+  }, [profesional, ocupadas, hora]);
 
   const toggle = (n: string) =>
     setSelected((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
@@ -92,6 +104,7 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
       servicios: selected,
       fecha: fechaIso,
       hora,
+      profesional,
       total,
     });
     if (!res.ok) {
@@ -102,7 +115,9 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
     }
     setStage("done");
     toast.success("Cita confirmada", {
-      description: `${format(fecha, "d 'de' MMMM", { locale: es })} · ${hora}`,
+      description: `${format(fecha, "d 'de' MMMM", { locale: es })} · ${hora} · ${
+        profesional === "cristina" ? "Cristina" : "Jessie"
+      }`,
     });
   };
 
@@ -174,6 +189,28 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-[0.2em] text-primary">Profesional / Cabina</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {PROFESIONALES.map((p) => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setProfesional(p.key)}
+                      className={cn(
+                        "flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all",
+                        profesional === p.key
+                          ? "border-primary bg-primary text-primary-foreground shadow"
+                          : "border-primary/25 bg-background/40 text-foreground hover:border-primary/60 hover:bg-primary/5"
+                      )}
+                    >
+                      <User className="size-4" />
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Fecha</Label>
@@ -208,7 +245,7 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
                     <PopoverContent className="w-48 p-2" align="start">
                       <div className="grid grid-cols-3 gap-1.5 max-h-60 overflow-y-auto">
                         {HORAS.map((h) => {
-                          const ocupada = horasOcupadas.has(h);
+                          const ocupada = ocupadas.get(h)?.has(profesional) ?? false;
                           return (
                             <button
                               key={h}
@@ -225,7 +262,7 @@ export function BookingModal({ open, onOpenChange, category }: Props) {
                                   ? "bg-primary text-primary-foreground"
                                   : "hover:bg-primary/10 text-foreground"
                               )}
-                              title={ocupada ? "Hora ocupada" : ""}
+                              title={ocupada ? `Ocupada con ${profesional}` : ""}
                             >
                               {h}
                             </button>
