@@ -19,6 +19,8 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,7 +60,8 @@ function Admin() {
   const [bonos, setBonos] = useState<Bono[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
   const today = new Date().toISOString().slice(0, 10);
-  const [query, setQuery] = useState(today);
+  const [nameQuery, setNameQuery] = useState("");
+  const [dateQuery, setDateQuery] = useState<string>(today);
   const [ready, setReady] = useState(false);
   const [openNew, setOpenNew] = useState(false);
   const [editing, setEditing] = useState<Cita | null>(null);
@@ -119,20 +122,19 @@ function Admin() {
 
   const visible = useMemo(
     () => {
-      const q = query.trim().toLowerCase();
+      const n = nameQuery.trim().toLowerCase();
       return citas
         .filter((c) => (filter === "todas" ? true : c.estado === filter))
+        .filter((c) => (dateQuery ? c.fecha === dateQuery : true))
         .filter((c) => {
-          if (!q) return true;
+          if (!n) return true;
           return (
-            c.nombre.toLowerCase().includes(q) ||
-            c.telefono.toLowerCase().includes(q) ||
-            c.fecha.includes(q) ||
-            c.profesional.toLowerCase().includes(q)
+            c.nombre.toLowerCase().includes(n) ||
+            c.telefono.toLowerCase().includes(n)
           );
         });
     },
-    [citas, filter, query]
+    [citas, filter, nameQuery, dateQuery]
   );
 
   const handleLogout = async () => {
