@@ -19,6 +19,8 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,7 +60,8 @@ function Admin() {
   const [bonos, setBonos] = useState<Bono[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
   const today = new Date().toISOString().slice(0, 10);
-  const [query, setQuery] = useState(today);
+  const [nameQuery, setNameQuery] = useState("");
+  const [dateQuery, setDateQuery] = useState<string>(today);
   const [ready, setReady] = useState(false);
   const [openNew, setOpenNew] = useState(false);
   const [editing, setEditing] = useState<Cita | null>(null);
@@ -119,20 +122,19 @@ function Admin() {
 
   const visible = useMemo(
     () => {
-      const q = query.trim().toLowerCase();
+      const n = nameQuery.trim().toLowerCase();
       return citas
         .filter((c) => (filter === "todas" ? true : c.estado === filter))
+        .filter((c) => (dateQuery ? c.fecha === dateQuery : true))
         .filter((c) => {
-          if (!q) return true;
+          if (!n) return true;
           return (
-            c.nombre.toLowerCase().includes(q) ||
-            c.telefono.toLowerCase().includes(q) ||
-            c.fecha.includes(q) ||
-            c.profesional.toLowerCase().includes(q)
+            c.nombre.toLowerCase().includes(n) ||
+            c.telefono.toLowerCase().includes(n)
           );
         });
     },
-    [citas, filter, query]
+    [citas, filter, nameQuery, dateQuery]
   );
 
   const handleLogout = async () => {
@@ -199,31 +201,70 @@ function Admin() {
         </div>
 
         {/* SEARCH */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="mb-8 grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+          <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
             <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nombre, teléfono, fecha (2026-05-30) o profesional…"
+              value={nameQuery}
+              onChange={(e) => setNameQuery(e.target.value)}
+              placeholder="Buscar nombre o teléfono…"
               className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
             />
           </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setQuery(today)}
-              variant="outline"
-              className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
-            >
-              Hoy
-            </Button>
-            <Button
-              onClick={() => setOpenNew(true)}
-              className="h-12 bg-primary text-primary-foreground hover:bg-primary/90 text-xs uppercase tracking-[0.2em]"
-            >
-              <Plus className="size-4" /> Nueva cita
-            </Button>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground justify-start min-w-[210px]"
+              >
+                <CalendarIcon className="size-4" />
+                {dateQuery
+                  ? format(parseISO(dateQuery), "EEE d 'de' MMM yyyy", { locale: es })
+                  : "Todas las fechas"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-50" align="end">
+              <Calendar
+                mode="single"
+                selected={dateQuery ? parseISO(dateQuery) : undefined}
+                onSelect={(d) => setDateQuery(d ? format(d, "yyyy-MM-dd") : "")}
+                locale={es}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+              <div className="flex gap-2 p-3 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setDateQuery(today)}
+                >
+                  Hoy
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setDateQuery("")}
+                >
+                  Todas
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button
+            onClick={() => { setNameQuery(""); setDateQuery(today); }}
+            variant="outline"
+            className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+          >
+            Hoy
+          </Button>
+          <Button
+            onClick={() => setOpenNew(true)}
+            className="h-12 bg-primary text-primary-foreground hover:bg-primary/90 text-xs uppercase tracking-[0.2em]"
+          >
+            <Plus className="size-4" /> Nueva cita
+          </Button>
         </div>
 
         {/* STATS */}
