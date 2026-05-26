@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
-import { SERVICIOS, type ServiceCategory } from "@/lib/config";
+import { Sparkles, CalendarPlus } from "lucide-react";
+import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
 
 const DESCRIPCIONES: Record<ServiceCategory, string> = {
   facial: "Tratamientos faciales avanzados para revitalizar, limpiar y rejuvenecer tu piel. Cada protocolo se diseña a medida según las necesidades de tu rostro.",
@@ -15,7 +15,7 @@ type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   category: ServiceCategory | null;
-  onBook: () => void;
+  onBook: (treatment: Treatment & { categoria: ServiceCategory }) => void;
 };
 
 export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props) {
@@ -27,7 +27,7 @@ export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props
       <DialogContent className="glass max-w-lg max-h-[92vh] overflow-y-auto gold-shadow">
         <DialogHeader>
           <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-primary font-semibold">
-            <Sparkles className="size-3" /> Información
+            <Sparkles className="size-3" /> Tratamientos disponibles
           </span>
           <DialogTitle className="font-display text-3xl text-foreground">
             {data.titulo}
@@ -38,31 +38,32 @@ export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props
         </DialogHeader>
 
         <div className="space-y-3 pt-2">
-          <p className="text-[11px] uppercase tracking-[0.25em] text-primary font-semibold">
-            Lo que incluye
-          </p>
-          <ul className="divide-y divide-primary/15 rounded-xl border border-primary/15 bg-background/40">
+          <ul className="space-y-2">
             {data.treatments.map((t) => (
-              <li key={t.nombre} className="flex items-center justify-between px-4 py-3 text-sm">
-                <span className="text-foreground">{t.nombre}</span>
-                <span className="text-xs text-muted-foreground">Disponible</span>
+              <li
+                key={t.nombre}
+                className="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-background/40 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm text-foreground truncate">{t.nombre}</p>
+                  <p className="text-xs text-primary font-semibold mt-0.5">
+                    {t.desde ? "desde " : ""}{t.precio}€
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onBook({ ...t, categoria: category });
+                  }}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 text-[10px] uppercase tracking-[0.2em] shrink-0"
+                >
+                  <CalendarPlus className="size-3.5" /> Reservar
+                </Button>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-muted-foreground italic pt-1">
-            Para ver precios y reservar, pulsa el botón de cita previa.
-          </p>
         </div>
-
-        <Button
-          onClick={() => {
-            onOpenChange(false);
-            onBook();
-          }}
-          className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 text-xs uppercase tracking-[0.25em] font-semibold mt-4"
-        >
-          Pedir cita previa
-        </Button>
       </DialogContent>
     </Dialog>
   );
