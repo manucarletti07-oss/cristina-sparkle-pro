@@ -13,6 +13,8 @@ import {
   User as UserIcon,
   Sparkles,
   Search,
+  Pencil,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { deleteCita, getCitas, updateCita, type Cita } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
+import { BookingModal } from "@/components/BookingModal";
+import { EditCitaModal } from "@/components/EditCitaModal";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -55,6 +59,8 @@ function Admin() {
   const today = new Date().toISOString().slice(0, 10);
   const [query, setQuery] = useState(today);
   const [ready, setReady] = useState(false);
+  const [openNew, setOpenNew] = useState(false);
+  const [editing, setEditing] = useState<Cita | null>(null);
 
   useEffect(() => {
     setReady(true);
@@ -122,6 +128,9 @@ function Admin() {
   };
 
   if (!ready || !isAuth) return null;
+
+  const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
+  const jessieCitas = visible.filter((c) => c.profesional === "jessie");
 
   return (
     <div className="min-h-screen bg-foreground text-background">
