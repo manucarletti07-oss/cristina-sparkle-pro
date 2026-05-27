@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS citas_unica_por_profesional ON public.citas (fecha, hora, profesional) WHERE estado = 'pendiente';
