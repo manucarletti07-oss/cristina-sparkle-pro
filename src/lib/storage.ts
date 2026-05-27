@@ -44,6 +44,8 @@ export function generarSlots(): string[] {
 export type Cita = {
   id: string;
   nombre: string;
+  apellido_1: string | null;
+  apellido_2: string | null;
   telefono: string;
   email?: string | null;
   observaciones?: string | null;
@@ -56,6 +58,16 @@ export type Cita = {
   estado: "pendiente" | "realizada";
   bonoId?: string | null;
   createdAt: string;
+};
+
+type ClienteJoin = {
+  nombre: string;
+  apellido_1: string | null;
+  apellido_2: string | null;
+  telefono: string | null;
+  email: string | null;
+  alias: string | null;
+  observaciones: string | null;
 };
 
 type Row = {
@@ -73,11 +85,14 @@ type Row = {
   estado: "pendiente" | "realizada";
   bono_id: string | null;
   created_at: string;
+  clientes: ClienteJoin | null;
 };
 
 const toCita = (r: Row): Cita => ({
   id: r.id,
   nombre: r.nombre,
+  apellido_1: r.clientes?.apellido_1 ?? null,
+  apellido_2: r.clientes?.apellido_2 ?? null,
   telefono: r.telefono,
   email: r.email,
   observaciones: r.observaciones,
@@ -95,7 +110,7 @@ const toCita = (r: Row): Cita => ({
 export async function getCitas(): Promise<Cita[]> {
   const { data, error } = await supabase
     .from("citas")
-    .select("*")
+    .select("*, clientes(nombre, apellido_1, apellido_2, telefono, email, alias, observaciones)")
     .order("fecha", { ascending: false })
     .order("hora", { ascending: false });
   if (error) {
