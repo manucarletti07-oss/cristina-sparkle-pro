@@ -32,7 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: cleanEmail,
       password,
     });
-    if (!error) return true;
+    if (!error) {
+      setIsAuth(true);
+      setLoading(false);
+      return true;
+    }
     // Primera vez: intentar registrar la cuenta de admin
     if (error.message?.toLowerCase().includes("invalid")) {
       const { error: signErr } = await supabase.auth.signUp({
@@ -45,7 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: cleanEmail,
         password,
       });
-      return !retry;
+      if (!retry) {
+        setIsAuth(true);
+        setLoading(false);
+        return true;
+      }
+      return false;
     }
     return false;
   };
