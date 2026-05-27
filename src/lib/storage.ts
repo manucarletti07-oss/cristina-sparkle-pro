@@ -142,7 +142,7 @@ export async function getOcupadasPorFecha(
 }
 
 export async function saveCita(
-  cita: Omit<Cita, "id" | "createdAt" | "estado">
+  cita: Omit<Cita, "id" | "createdAt" | "estado" | "apellido_1" | "apellido_2">
 ): Promise<{ ok: true; cita: Cita } | { ok: false; error: string }> {
   // Busca o crea cliente por teléfono
   const tel = cita.telefono.trim();
@@ -186,7 +186,7 @@ export async function saveCita(
       return { ok: false, error: "Esa hora ya está ocupada con esa profesional" };
     return { ok: false, error: error.message };
   }
-  return { ok: true, cita: toCita(data as Row) };
+  return { ok: true, cita: toCita({ ...(data as any), clientes: null } as Row) };
 }
 
 export async function updateCita(
