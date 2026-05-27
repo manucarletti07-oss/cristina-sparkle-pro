@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type AuthCtx = {
   isAuth: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
 };
@@ -11,11 +12,16 @@ const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuth, setIsAuth] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setIsAuth(!!data.session));
+    supabase.auth.getSession().then(({ data }) => {
+      setIsAuth(!!data.session);
+      setLoading(false);
+    });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setIsAuth(!!session);
+      setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -26,7 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: cleanEmail,
       password,
     });
-    if (!error) return true;
+    if (!error) {
+      setIsAuth(true);
+      setLoading(false);
+      return true;
+    }
     // Primera vez: intentar registrar la cuenta de admin
     if (error.message?.toLowerCase().includes("invalid")) {
       const { error: signErr } = await supabase.auth.signUp({
@@ -39,7 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: cleanEmail,
         password,
       });
-      return !retry;
+      if (!retry) {
+        setIsAuth(true);
+        setLoading(false);
+        return true;
+      }
+      return false;
     }
     return false;
   };
@@ -48,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  return <Ctx.Provider value={{ isAuth, login, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ isAuth, loading, login, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

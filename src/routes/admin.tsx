@@ -7,7 +7,10 @@ import {
   CheckCircle2,
   Clock,
   Euro,
+  Gift,
+  IdCard,
   LogOut,
+  MessageCircle,
   Phone,
   Trash2,
   User as UserIcon,
@@ -21,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +39,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { deleteCita, getCitas, updateCita, type Cita, type Bono } from "@/lib/storage";
+import { deleteCita, getBonosPanel, getCitas, PROFESIONALES, updateCita, type Cita, type Bono, type Profesional } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
@@ -53,12 +57,22 @@ export const Route = createFileRoute("/admin")({
 
 type Filter = "todas" | "pendiente" | "realizada";
 
+function whatsappUrl(cita: Cita) {
+  const phone = cita.telefono.replace(/[^\d]/g, "");
+  const clean = phone.length === 9 ? `34${phone}` : phone;
+  const msg = encodeURIComponent(
+    `Hola ${cita.nombre}, te recordamos tu cita del ${format(parseISO(cita.fecha), "d 'de' MMMM", { locale: es })} a las ${cita.hora} con ${cita.profesional === "jessie" ? "Jessie" : "Cristina"}.`
+  );
+  return `https://wa.me/${clean}?text=${msg}`;
+}
+
 function Admin() {
-  const { isAuth, logout } = useAuth();
+  const { isAuth, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const [citas, setCitas] = useState<Cita[]>([]);
   const [bonos, setBonos] = useState<Bono[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
+  const [profesionalQuery, setProfesionalQuery] = useState<"todas" | Profesional>("todas");
   const today = new Date().toISOString().slice(0, 10);
   const [nameQuery, setNameQuery] = useState("");
   const [dateQuery, setDateQuery] = useState<string>(today);
@@ -67,6 +81,7 @@ function Admin() {
   const [editing, setEditing] = useState<Cita | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     setReady(true);
     if (!isAuth) {
       navigate({ to: "/" });
@@ -74,24 +89,7 @@ function Admin() {
     }
     const load = () => {
       getCitas().then(setCitas);
-      supabase
-        .from("bonos")
-        .select("*")
-        .then(({ data }) => {
-          if (!data) return;
-          setBonos(
-            data.map((r: any) => ({
-              id: r.id,
-              clienteId: r.cliente_id,
-              nombre: r.nombre,
-              totalSesiones: r.total_sesiones,
-              sesionesRestantes: r.sesiones_restantes,
-              precio: Number(r.precio),
-              estado: r.estado,
-              fechaCompra: r.fecha_compra,
-            }))
-          );
-        });
+      getBonosPanel().then(setBonos);
     };
     load();
     const channel = supabase
@@ -106,17 +104,22 @@ function Admin() {
         { event: "*", schema: "public", table: "bonos" },
         () => load()
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "clientes" },
+        () => load()
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isAuth, navigate]);
+  }, [authLoading, isAuth, navigate]);
 
   // Citas del día / rango seleccionado (sin filtro de estado ni de nombre)
-  const citasDelDia = useMemo(
-    () => (dateQuery ? citas.filter((c) => c.fecha === dateQuery) : citas),
-    [citas, dateQuery]
-  );
+  const citasDelDia = useMemo(() => {
+    const dia = citas.filter((c) => c.fecha === dateQuery);
+    return profesionalQuery === "todas" ? dia : dia.filter((c) => c.profesional === profesionalQuery);
+  }, [citas, dateQuery, profesionalQuery]);
 
   const stats = useMemo(() => {
     const pendientes = citasDelDia.filter((c) => c.estado === "pendiente");
@@ -132,8 +135,7 @@ function Admin() {
     };
   }, [citasDelDia]);
 
-  const visible = useMemo(
-    () => {
+  const visible = useMemo(() => {
       const n = nameQuery.trim().toLowerCase();
       return citasDelDia
         .filter((c) => (filter === "todas" ? true : c.estado === filter))
@@ -144,9 +146,18 @@ function Admin() {
             c.telefono.toLowerCase().includes(n)
           );
         });
-    },
-    [citasDelDia, filter, nameQuery]
-  );
+    }, [citasDelDia, filter, nameQuery]);
+
+  const bonosVisibles = useMemo(() => {
+    const n = nameQuery.trim().toLowerCase();
+    return bonos.filter((b) => {
+      if (!n) return true;
+      const cliente = b.cliente;
+      return [cliente?.nombre, cliente?.alias, cliente?.telefono, cliente?.email, b.clienteId]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(n));
+    });
+  }, [bonos, nameQuery]);
 
   const handleLogout = async () => {
     await logout();
@@ -177,7 +188,7 @@ function Admin() {
 
   const getBonoForCita = (c: Cita) => (c.clienteId ? bonoActivoByCliente.get(c.clienteId) ?? null : null);
 
-  if (!ready || !isAuth) return null;
+  if (!ready || authLoading || !isAuth) return null;
 
   const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
   const jessieCitas = visible.filter((c) => c.profesional === "jessie");
@@ -212,7 +223,7 @@ function Admin() {
         </div>
 
         {/* SEARCH */}
-        <div className="mb-8 grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+        <div className="mb-8 grid gap-3 md:grid-cols-[1fr_220px_auto_auto]">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
             <Input
@@ -222,6 +233,17 @@ function Admin() {
               className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
             />
           </div>
+          <Select value={profesionalQuery} onValueChange={(v) => setProfesionalQuery(v as "todas" | Profesional)}>
+            <SelectTrigger className="h-12 border-primary/40 bg-background/5 text-background focus:ring-primary">
+              <SelectValue placeholder="Trabajadora" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas</SelectItem>
+              {PROFESIONALES.map((p) => (
+                <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -252,19 +274,11 @@ function Admin() {
                 >
                   Hoy
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setDateQuery("")}
-                >
-                  Todas
-                </Button>
               </div>
             </PopoverContent>
           </Popover>
           <Button
-            onClick={() => { setNameQuery(""); setDateQuery(today); }}
+            onClick={() => { setNameQuery(""); setDateQuery(today); setProfesionalQuery("todas"); }}
             variant="outline"
             className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
           >
@@ -313,6 +327,8 @@ function Admin() {
           <AgendaColumna titulo="Agenda de Cristina" citas={cristinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
           <AgendaColumna titulo="Agenda de Jessie" citas={jessieCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
         </div>
+
+        <BonosPanel bonos={bonosVisibles} />
       </main>
 
       <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
@@ -370,6 +386,51 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
       </div>
       <p className="font-display text-3xl text-background mt-3">{value}</p>
     </div>
+  );
+}
+
+function BonosPanel({ bonos }: { bonos: Bono[] }) {
+  return (
+    <section className="mt-12">
+      <h3 className="font-display text-2xl text-background mb-4 flex items-center gap-2">
+        <Gift className="size-5 text-primary" /> Bonos comprados
+        <span className="text-xs uppercase tracking-[0.2em] text-primary/70">({bonos.length})</span>
+      </h3>
+      {bonos.length === 0 ? (
+        <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
+          <p className="text-sm text-background/60">No hay bonos para esta búsqueda.</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {bonos.map((b) => {
+            const usadas = b.totalSesiones - b.sesionesRestantes;
+            const cliente = b.cliente;
+            return (
+              <div key={b.id} className="glass-dark rounded-2xl p-5 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-display text-xl text-background">{cliente?.nombre ?? "Cliente"}</p>
+                    <p className="text-xs text-background/55">{cliente?.telefono ?? "Sin teléfono"}</p>
+                  </div>
+                  <Badge className={cn("border text-[10px] uppercase tracking-[0.18em]", b.estado === "agotado" ? "bg-destructive/15 text-destructive border-destructive/40" : "bg-primary/15 text-primary border-primary/40")}>
+                    {b.estado === "agotado" ? "Agotado" : "Activo"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-xl bg-background/5 p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-primary">Restan</p><p className="font-display text-2xl text-background">{b.sesionesRestantes}</p></div>
+                  <div className="rounded-xl bg-background/5 p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-primary">Usadas</p><p className="font-display text-2xl text-background">{usadas}</p></div>
+                  <div className="rounded-xl bg-background/5 p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-primary">Total</p><p className="font-display text-2xl text-background">{b.totalSesiones}</p></div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-background/60">
+                  <IdCard className="size-3.5 text-primary" /> ID cliente: {b.clienteId.slice(0, 8)}
+                </div>
+                <p className="text-xs text-background/55">Compra: {format(parseISO(b.fechaCompra), "d MMM yyyy", { locale: es })}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -485,6 +546,15 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit }: { cita: Cita; bono: 
             className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
           >
             <Pencil className="size-4" /> Modificar
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
+          >
+            <a href={whatsappUrl(cita)} target="_blank" rel="noreferrer">
+              <MessageCircle className="size-4" /> WhatsApp
+            </a>
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
