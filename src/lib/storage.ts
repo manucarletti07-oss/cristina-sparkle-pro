@@ -225,6 +225,7 @@ export async function searchClientes(q: string, limit = 8): Promise<Cliente[]> {
 export type Bono = {
   id: string;
   clienteId: string;
+  cliente?: Cliente | null;
   nombre: string;
   totalSesiones: number;
   sesionesRestantes: number;
@@ -236,6 +237,7 @@ export type Bono = {
 type BonoRow = {
   id: string;
   cliente_id: string;
+  clientes?: Cliente | null;
   nombre: string;
   total_sesiones: number;
   sesiones_restantes: number;
@@ -247,6 +249,7 @@ type BonoRow = {
 const toBono = (r: BonoRow): Bono => ({
   id: r.id,
   clienteId: r.cliente_id,
+  cliente: r.clientes ?? null,
   nombre: r.nombre,
   totalSesiones: r.total_sesiones,
   sesionesRestantes: r.sesiones_restantes,
@@ -318,5 +321,17 @@ export async function getBonosByCliente(clienteId: string): Promise<Bono[]> {
     .eq("cliente_id", clienteId)
     .order("fecha_compra", { ascending: false });
   if (error) return [];
+  return (data as BonoRow[]).map(toBono);
+}
+
+export async function getBonosPanel(): Promise<Bono[]> {
+  const { data, error } = await supabase
+    .from("bonos")
+    .select("*, clientes(id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones)")
+    .order("fecha_compra", { ascending: false });
+  if (error) {
+    console.error(error);
+    return [];
+  }
   return (data as BonoRow[]).map(toBono);
 }
