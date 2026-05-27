@@ -112,20 +112,31 @@ function Admin() {
     };
   }, [isAuth, navigate]);
 
+  // Citas del día / rango seleccionado (sin filtro de estado ni de nombre)
+  const citasDelDia = useMemo(
+    () => (dateQuery ? citas.filter((c) => c.fecha === dateQuery) : citas),
+    [citas, dateQuery]
+  );
+
   const stats = useMemo(() => {
-    const pendientes = citas.filter((c) => c.estado === "pendiente");
-    const realizadas = citas.filter((c) => c.estado === "realizada");
+    const pendientes = citasDelDia.filter((c) => c.estado === "pendiente");
+    const realizadas = citasDelDia.filter((c) => c.estado === "realizada");
     const ingresos = realizadas.reduce((s, c) => s + c.total, 0);
     const previstos = pendientes.reduce((s, c) => s + c.total, 0);
-    return { total: citas.length, pendientes: pendientes.length, realizadas: realizadas.length, ingresos, previstos };
-  }, [citas]);
+    return {
+      total: citasDelDia.length,
+      pendientes: pendientes.length,
+      realizadas: realizadas.length,
+      ingresos,
+      previstos,
+    };
+  }, [citasDelDia]);
 
   const visible = useMemo(
     () => {
       const n = nameQuery.trim().toLowerCase();
-      return citas
+      return citasDelDia
         .filter((c) => (filter === "todas" ? true : c.estado === filter))
-        .filter((c) => (dateQuery ? c.fecha === dateQuery : true))
         .filter((c) => {
           if (!n) return true;
           return (
@@ -134,7 +145,7 @@ function Admin() {
           );
         });
     },
-    [citas, filter, nameQuery, dateQuery]
+    [citasDelDia, filter, nameQuery]
   );
 
   const handleLogout = async () => {
@@ -269,11 +280,11 @@ function Admin() {
 
         {/* STATS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          <StatCard label="Total citas" value={String(stats.total)} icon={<CalendarIcon className="size-4" />} />
-          <StatCard label="Pendientes" value={String(stats.pendientes)} icon={<Clock className="size-4" />} />
+          <StatCard label={dateQuery ? "Citas del día" : "Total citas"} value={String(stats.total)} icon={<CalendarIcon className="size-4" />} />
+          <StatCard label="Por hacer" value={String(stats.pendientes)} icon={<Clock className="size-4" />} />
           <StatCard label="Realizadas" value={String(stats.realizadas)} icon={<CheckCircle2 className="size-4" />} />
           <StatCard
-            label="Ingresos previstos"
+            label={dateQuery ? "Ingresos del día" : "Ingresos previstos"}
             value={`${stats.previstos + stats.ingresos}€`}
             icon={<Euro className="size-4" />}
           />
