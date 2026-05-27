@@ -7,7 +7,10 @@ import {
   CheckCircle2,
   Clock,
   Euro,
+  Gift,
+  IdCard,
   LogOut,
+  MessageCircle,
   Phone,
   Trash2,
   User as UserIcon,
@@ -21,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +39,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { deleteCita, getCitas, updateCita, type Cita, type Bono } from "@/lib/storage";
+import { deleteCita, getBonosPanel, getCitas, PROFESIONALES, updateCita, type Cita, type Bono, type Profesional } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
