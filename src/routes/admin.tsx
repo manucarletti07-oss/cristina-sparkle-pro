@@ -57,6 +57,15 @@ export const Route = createFileRoute("/admin")({
 
 type Filter = "todas" | "pendiente" | "realizada";
 
+function whatsappUrl(cita: Cita) {
+  const phone = cita.telefono.replace(/[^\d]/g, "");
+  const clean = phone.length === 9 ? `34${phone}` : phone;
+  const msg = encodeURIComponent(
+    `Hola ${cita.nombre}, te recordamos tu cita del ${format(parseISO(cita.fecha), "d 'de' MMMM", { locale: es })} a las ${cita.hora} con ${cita.profesional === "jessie" ? "Jessie" : "Cristina"}.`
+  );
+  return `https://wa.me/${clean}?text=${msg}`;
+}
+
 function Admin() {
   const { isAuth, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
@@ -214,7 +223,7 @@ function Admin() {
         </div>
 
         {/* SEARCH */}
-        <div className="mb-8 grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+        <div className="mb-8 grid gap-3 md:grid-cols-[1fr_220px_auto_auto]">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
             <Input
@@ -224,6 +233,17 @@ function Admin() {
               className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
             />
           </div>
+          <Select value={profesionalQuery} onValueChange={(v) => setProfesionalQuery(v as "todas" | Profesional)}>
+            <SelectTrigger className="h-12 border-primary/40 bg-background/5 text-background focus:ring-primary">
+              <SelectValue placeholder="Trabajadora" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas</SelectItem>
+              {PROFESIONALES.map((p) => (
+                <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -254,19 +274,11 @@ function Admin() {
                 >
                   Hoy
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setDateQuery("")}
-                >
-                  Todas
-                </Button>
               </div>
             </PopoverContent>
           </Popover>
           <Button
-            onClick={() => { setNameQuery(""); setDateQuery(today); }}
+            onClick={() => { setNameQuery(""); setDateQuery(today); setProfesionalQuery("todas"); }}
             variant="outline"
             className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
           >
@@ -315,6 +327,8 @@ function Admin() {
           <AgendaColumna titulo="Agenda de Cristina" citas={cristinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
           <AgendaColumna titulo="Agenda de Jessie" citas={jessieCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
         </div>
+
+        <BonosPanel bonos={bonosVisibles} />
       </main>
 
       <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
