@@ -58,11 +58,12 @@ export const Route = createFileRoute("/admin")({
 type Filter = "todas" | "pendiente" | "realizada";
 
 function Admin() {
-  const { isAuth, logout } = useAuth();
+  const { isAuth, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const [citas, setCitas] = useState<Cita[]>([]);
   const [bonos, setBonos] = useState<Bono[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
+  const [profesionalQuery, setProfesionalQuery] = useState<"todas" | Profesional>("todas");
   const today = new Date().toISOString().slice(0, 10);
   const [nameQuery, setNameQuery] = useState("");
   const [dateQuery, setDateQuery] = useState<string>(today);
@@ -71,6 +72,7 @@ function Admin() {
   const [editing, setEditing] = useState<Cita | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     setReady(true);
     if (!isAuth) {
       navigate({ to: "/" });
@@ -78,24 +80,7 @@ function Admin() {
     }
     const load = () => {
       getCitas().then(setCitas);
-      supabase
-        .from("bonos")
-        .select("*")
-        .then(({ data }) => {
-          if (!data) return;
-          setBonos(
-            data.map((r: any) => ({
-              id: r.id,
-              clienteId: r.cliente_id,
-              nombre: r.nombre,
-              totalSesiones: r.total_sesiones,
-              sesionesRestantes: r.sesiones_restantes,
-              precio: Number(r.precio),
-              estado: r.estado,
-              fechaCompra: r.fecha_compra,
-            }))
-          );
-        });
+      getBonosPanel().then(setBonos);
     };
     load();
     const channel = supabase
@@ -110,17 +95,22 @@ function Admin() {
         { event: "*", schema: "public", table: "bonos" },
         () => load()
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "clientes" },
+        () => load()
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isAuth, navigate]);
+  }, [authLoading, isAuth, navigate]);
 
   // Citas del día / rango seleccionado (sin filtro de estado ni de nombre)
-  const citasDelDia = useMemo(
-    () => (dateQuery ? citas.filter((c) => c.fecha === dateQuery) : citas),
-    [citas, dateQuery]
-  );
+  const citasDelDia = useMemo(() => {
+    const dia = citas.filter((c) => c.fecha === dateQuery);
+    return profesionalQuery === "todas" ? dia : dia.filter((c) => c.profesional === profesionalQuery);
+  }, [citas, dateQuery, profesionalQuery]);
 
   const stats = useMemo(() => {
     const pendientes = citasDelDia.filter((c) => c.estado === "pendiente");
@@ -136,8 +126,7 @@ function Admin() {
     };
   }, [citasDelDia]);
 
-  const visible = useMemo(
-    () => {
+  const visible = useMemo(() => {
       const n = nameQuery.trim().toLowerCase();
       return citasDelDia
         .filter((c) => (filter === "todas" ? true : c.estado === filter))
@@ -148,9 +137,18 @@ function Admin() {
             c.telefono.toLowerCase().includes(n)
           );
         });
-    },
-    [citasDelDia, filter, nameQuery]
-  );
+    }, [citasDelDia, filter, nameQuery]);
+
+  const bonosVisibles = useMemo(() => {
+    const n = nameQuery.trim().toLowerCase();
+    return bonos.filter((b) => {
+      if (!n) return true;
+      const cliente = b.cliente;
+      return [cliente?.nombre, cliente?.alias, cliente?.telefono, cliente?.email, b.clienteId]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(n));
+    });
+  }, [bonos, nameQuery]);
 
   const handleLogout = async () => {
     await logout();
@@ -181,7 +179,7 @@ function Admin() {
 
   const getBonoForCita = (c: Cita) => (c.clienteId ? bonoActivoByCliente.get(c.clienteId) ?? null : null);
 
-  if (!ready || !isAuth) return null;
+  if (!ready || authLoading || !isAuth) return null;
 
   const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
   const jessieCitas = visible.filter((c) => c.profesional === "jessie");
