@@ -1,19 +1,21 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type Profesional = "cristina" | "jessie";
+export type Profesional = "cristina" | "jenny" | "nerea" | "maquina";
 
 export const PROFESIONALES: { key: Profesional; label: string }[] = [
   { key: "cristina", label: "Cristina" },
-  { key: "jessie", label: "Jessie" },
+  { key: "jenny", label: "Jenny" },
+  { key: "nerea", label: "Nerea" },
+  { key: "maquina", label: "Máquina (Sala 1)" },
 ];
 
-// Horario: 10:00–20:00, slots de 45 min, parada 14:00–15:00.
+// Horario: mañana 10:00–14:00, tarde 16:00–20:00, slots de 15 min.
 export const HORARIO = {
-  apertura: "10:00",
-  cierre: "20:00",
-  comidaInicio: "14:00",
-  comidaFin: "15:00",
-  duracionMin: 45,
+  bloques: [
+    { inicio: "10:00", fin: "14:00" },
+    { inicio: "16:00", fin: "20:00" },
+  ],
+  duracionMin: 15,
 };
 
 function toMin(h: string) {
@@ -28,15 +30,12 @@ function toHHMM(m: number) {
 
 export function generarSlots(): string[] {
   const slots: string[] = [];
-  const start = toMin(HORARIO.apertura);
-  const end = toMin(HORARIO.cierre);
-  const cInicio = toMin(HORARIO.comidaInicio);
-  const cFin = toMin(HORARIO.comidaFin);
-  for (let t = start; t + HORARIO.duracionMin <= end; t += HORARIO.duracionMin) {
-    const fin = t + HORARIO.duracionMin;
-    // excluir slots que se solapan con la comida
-    if (fin > cInicio && t < cFin) continue;
-    slots.push(toHHMM(t));
+  for (const b of HORARIO.bloques) {
+    const start = toMin(b.inicio);
+    const end = toMin(b.fin);
+    for (let t = start; t < end; t += HORARIO.duracionMin) {
+      slots.push(toHHMM(t));
+    }
   }
   return slots;
 }

@@ -61,7 +61,7 @@ function whatsappUrl(cita: Cita) {
   const phone = cita.telefono.replace(/[^\d]/g, "");
   const clean = phone.length === 9 ? `34${phone}` : phone;
   const msg = encodeURIComponent(
-    `Hola ${cita.nombre}, te recordamos tu cita del ${format(parseISO(cita.fecha), "d 'de' MMMM", { locale: es })} a las ${cita.hora} con ${cita.profesional === "jessie" ? "Jessie" : "Cristina"}.`
+    `Hola, desde Cristina Febrián le recordamos que hoy tiene cita a las ${cita.hora}.`
   );
   return `https://wa.me/${clean}?text=${msg}`;
 }
@@ -196,7 +196,9 @@ function Admin() {
   if (!ready || authLoading || !isAuth) return null;
 
   const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
-  const jessieCitas = visible.filter((c) => c.profesional === "jessie");
+  const jennyCitas = visible.filter((c) => c.profesional === "jenny");
+  const nereaCitas = visible.filter((c) => c.profesional === "nerea");
+  const maquinaCitas = visible.filter((c) => c.profesional === "maquina");
 
   return (
     <div className="min-h-screen bg-foreground text-background">
@@ -330,7 +332,9 @@ function Admin() {
         {/* LIST */}
         <div className="grid lg:grid-cols-2 gap-8">
           <AgendaColumna titulo="Agenda de Cristina" citas={cristinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
-          <AgendaColumna titulo="Agenda de Jessie" citas={jessieCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
+          <AgendaColumna titulo="Agenda de Jenny" citas={jennyCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
+          <AgendaColumna titulo="Agenda de Nerea" citas={nereaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
+          <AgendaColumna titulo="Agenda Máquina (Sala 1)" citas={maquinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
         </div>
 
         <BonosPanel bonos={bonosVisibles} />

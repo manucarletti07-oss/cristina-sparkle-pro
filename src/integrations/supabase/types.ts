@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       bonos: {
         Row: {
+          catalogo_id: string | null
           cliente_id: string
           created_at: string
           estado: string
@@ -27,6 +28,7 @@ export type Database = {
           total_sesiones: number
         }
         Insert: {
+          catalogo_id?: string | null
           cliente_id: string
           created_at?: string
           estado?: string
@@ -38,6 +40,7 @@ export type Database = {
           total_sesiones?: number
         }
         Update: {
+          catalogo_id?: string | null
           cliente_id?: string
           created_at?: string
           estado?: string
@@ -50,6 +53,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "bonos_catalogo_id_fkey"
+            columns: ["catalogo_id"]
+            isOneToOne: false
+            referencedRelation: "bonos_catalogo"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bonos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
@@ -58,20 +68,51 @@ export type Database = {
           },
         ]
       }
+      bonos_catalogo: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+          precio: number
+          sesiones: number
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+          precio: number
+          sesiones: number
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+          precio?: number
+          sesiones?: number
+        }
+        Relationships: []
+      }
       citas: {
         Row: {
           bono_id: string | null
           cliente_id: string | null
+          cobrada: boolean
           created_at: string
           email: string | null
           estado: string
           fecha: string
+          fecha_cobro: string | null
           hora: string
           id: string
           nombre: string
           observaciones: string | null
+          precio_cobrado: number | null
           profesional: string
           recordatorio_enviado: boolean
+          sala: number | null
           servicios: string[]
           telefono: string
           total: number
@@ -79,16 +120,20 @@ export type Database = {
         Insert: {
           bono_id?: string | null
           cliente_id?: string | null
+          cobrada?: boolean
           created_at?: string
           email?: string | null
           estado?: string
           fecha: string
+          fecha_cobro?: string | null
           hora: string
           id?: string
           nombre: string
           observaciones?: string | null
+          precio_cobrado?: number | null
           profesional?: string
           recordatorio_enviado?: boolean
+          sala?: number | null
           servicios?: string[]
           telefono: string
           total?: number
@@ -96,16 +141,20 @@ export type Database = {
         Update: {
           bono_id?: string | null
           cliente_id?: string | null
+          cobrada?: boolean
           created_at?: string
           email?: string | null
           estado?: string
           fecha?: string
+          fecha_cobro?: string | null
           hora?: string
           id?: string
           nombre?: string
           observaciones?: string | null
+          precio_cobrado?: number | null
           profesional?: string
           recordatorio_enviado?: boolean
+          sala?: number | null
           servicios?: string[]
           telefono?: string
           total?: number
@@ -120,6 +169,38 @@ export type Database = {
           },
           {
             foreignKeyName: "citas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cliente_fotos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          descripcion: string | null
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_fotos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
@@ -162,6 +243,45 @@ export type Database = {
           nombre?: string
           observaciones?: string | null
           telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      servicios: {
+        Row: {
+          activo: boolean
+          categoria: string
+          created_at: string
+          duracion_min: number
+          id: string
+          nombre: string
+          precio: number
+          requiere_maquina: boolean
+          sala_requerida: number | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          categoria: string
+          created_at?: string
+          duracion_min?: number
+          id?: string
+          nombre: string
+          precio?: number
+          requiere_maquina?: boolean
+          sala_requerida?: number | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          categoria?: string
+          created_at?: string
+          duracion_min?: number
+          id?: string
+          nombre?: string
+          precio?: number
+          requiere_maquina?: boolean
+          sala_requerida?: number | null
           updated_at?: string
         }
         Relationships: []
