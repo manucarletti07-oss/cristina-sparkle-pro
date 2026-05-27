@@ -136,17 +136,22 @@ function Admin() {
   }, [citasDelDia]);
 
   const visible = useMemo(() => {
-      const n = nameQuery.trim().toLowerCase();
-      return citasDelDia
-        .filter((c) => (filter === "todas" ? true : c.estado === filter))
-        .filter((c) => {
-          if (!n) return true;
-          return (
-            c.nombre.toLowerCase().includes(n) ||
-            c.telefono.toLowerCase().includes(n)
-          );
-        });
-    }, [citasDelDia, filter, nameQuery]);
+    const n = nameQuery.trim().toLowerCase();
+    const base = n
+      ? (profesionalQuery === "todas" ? citas : citas.filter((c) => c.profesional === profesionalQuery))
+      : citasDelDia;
+    return base
+      .filter((c) => (filter === "todas" ? true : c.estado === filter))
+      .filter((c) => {
+        if (!n) return true;
+        return (
+          c.nombre.toLowerCase().includes(n) ||
+          c.telefono.toLowerCase().includes(n) ||
+          c.apellido_1?.toLowerCase().includes(n) ||
+          c.apellido_2?.toLowerCase().includes(n)
+        );
+      });
+  }, [citas, citasDelDia, filter, nameQuery, profesionalQuery]);
 
   const bonosVisibles = useMemo(() => {
     const n = nameQuery.trim().toLowerCase();
@@ -229,7 +234,7 @@ function Admin() {
             <Input
               value={nameQuery}
               onChange={(e) => setNameQuery(e.target.value)}
-              placeholder="Buscar nombre o teléfono…"
+              placeholder="Buscar nombre, apellido o teléfono…"
               className="h-12 pl-11 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
             />
           </div>
@@ -462,7 +467,7 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit }: { cita: Cita; bono: 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-display text-2xl text-background leading-tight">
-                  {cita.nombre}
+                  {cita.nombre} {cita.apellido_1} {cita.apellido_2}
                 </h3>
                 {cita.estado === "realizada" ? (
                   <Badge className="bg-emerald-500/15 text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/15 text-[10px] uppercase tracking-[0.18em]">
