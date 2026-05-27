@@ -389,6 +389,51 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
   );
 }
 
+function BonosPanel({ bonos }: { bonos: Bono[] }) {
+  return (
+    <section className="mt-12">
+      <h3 className="font-display text-2xl text-background mb-4 flex items-center gap-2">
+        <Gift className="size-5 text-primary" /> Bonos comprados
+        <span className="text-xs uppercase tracking-[0.2em] text-primary/70">({bonos.length})</span>
+      </h3>
+      {bonos.length === 0 ? (
+        <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
+          <p className="text-sm text-background/60">No hay bonos para esta búsqueda.</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {bonos.map((b) => {
+            const usadas = b.totalSesiones - b.sesionesRestantes;
+            const cliente = b.cliente;
+            return (
+              <div key={b.id} className="glass-dark rounded-2xl p-5 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-display text-xl text-background">{cliente?.nombre ?? "Cliente"}</p>
+                    <p className="text-xs text-background/55">{cliente?.telefono ?? "Sin teléfono"}</p>
+                  </div>
+                  <Badge className={cn("border text-[10px] uppercase tracking-[0.18em]", b.estado === "agotado" ? "bg-destructive/15 text-destructive border-destructive/40" : "bg-primary/15 text-primary border-primary/40")}>
+                    {b.estado === "agotado" ? "Agotado" : "Activo"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-xl bg-background/5 p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-primary">Restan</p><p className="font-display text-2xl text-background">{b.sesionesRestantes}</p></div>
+                  <div className="rounded-xl bg-background/5 p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-primary">Usadas</p><p className="font-display text-2xl text-background">{usadas}</p></div>
+                  <div className="rounded-xl bg-background/5 p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-primary">Total</p><p className="font-display text-2xl text-background">{b.totalSesiones}</p></div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-background/60">
+                  <IdCard className="size-3.5 text-primary" /> ID cliente: {b.clienteId.slice(0, 8)}
+                </div>
+                <p className="text-xs text-background/55">Compra: {format(parseISO(b.fechaCompra), "d MMM yyyy", { locale: es })}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function CitaCard({ cita, bono, onDone, onDelete, onEdit }: { cita: Cita; bono: Bono | null; onDone: () => void; onDelete: () => void; onEdit: () => void }) {
   const fechaFmt = (() => {
     try {
@@ -501,6 +546,15 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit }: { cita: Cita; bono: 
             className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
           >
             <Pencil className="size-4" /> Modificar
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
+          >
+            <a href={whatsappUrl(cita)} target="_blank" rel="noreferrer">
+              <MessageCircle className="size-4" /> WhatsApp
+            </a>
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
