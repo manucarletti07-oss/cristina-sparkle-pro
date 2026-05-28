@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { comprarBono } from "@/lib/storage";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { comprarBonoCatalogo, getBonosCatalogo, type BonoCatalogo } from "@/lib/storage";
 
 type Props = {
   open: boolean;
@@ -17,6 +18,8 @@ export function BuyBonoModal({ open, onOpenChange }: Props) {
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [stage, setStage] = useState<"form" | "loading" | "done">("form");
+  const [catalogo, setCatalogo] = useState<BonoCatalogo[]>([]);
+  const [catalogoId, setCatalogoId] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -24,15 +27,20 @@ export function BuyBonoModal({ open, onOpenChange }: Props) {
       setNombre("");
       setTelefono("");
       setEmail("");
+      setCatalogoId("");
+      getBonosCatalogo().then((c) => { setCatalogo(c); if (c[0]) setCatalogoId(c[0].id); });
     }
   }, [open]);
 
+  const selected = catalogo.find((c) => c.id === catalogoId);
+
   const confirm = async () => {
-    if (!nombre.trim() || !telefono.trim()) {
+    if (!nombre.trim() || !telefono.trim() || !catalogoId) {
       return toast.error("Indica nombre y teléfono");
     }
     setStage("loading");
-    const res = await comprarBono({
+    const res = await comprarBonoCatalogo({
+      catalogoId,
       nombre: nombre.trim(),
       telefono: telefono.trim(),
       email: email.trim() || null,
@@ -42,7 +50,7 @@ export function BuyBonoModal({ open, onOpenChange }: Props) {
       return toast.error(res.error);
     }
     setStage("done");
-    toast.success("Bono comprado", { description: "10 sesiones añadidas a tu perfil." });
+    toast.success("Bono comprado", { description: `${selected?.sesiones ?? ""} sesiones añadidas.` });
   };
 
   return (
@@ -55,7 +63,7 @@ export function BuyBonoModal({ open, onOpenChange }: Props) {
             </div>
             <h3 className="font-display text-2xl text-foreground">Bono activado</h3>
             <p className="text-sm text-muted-foreground">
-              Ya puedes usar tus 10 sesiones al reservar cualquier cita con el mismo teléfono.
+              Ya puedes usar tus sesiones al reservar cualquier cita con el mismo teléfono.
             </p>
             <Button onClick={() => onOpenChange(false)} className="mt-2">Cerrar</Button>
           </div>
@@ -63,13 +71,26 @@ export function BuyBonoModal({ open, onOpenChange }: Props) {
           <>
             <DialogHeader>
               <DialogTitle className="font-display text-2xl text-foreground">
-                Bono de 10 sesiones · 150€
+                Comprar bono
               </DialogTitle>
               <DialogDescription>
-                Compra tu bono y aplícalo al reservar cualquier cita con tu teléfono.
+                Elige el bono y aplícalo al reservar con tu teléfono.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Bono</Label>
+                <Select value={catalogoId} onValueChange={setCatalogoId}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona un bono" /></SelectTrigger>
+                  <SelectContent>
+                    {catalogo.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nombre} · {c.sesiones} sesiones · {c.precio}€
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label>Nombre</Label>
                 <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" />
@@ -90,7 +111,7 @@ export function BuyBonoModal({ open, onOpenChange }: Props) {
                 {stage === "loading" ? (
                   <><Loader2 className="size-4 animate-spin" /> Procesando…</>
                 ) : (
-                  "Comprar bono · 150€"
+                  selected ? `Comprar · ${selected.precio}€` : "Comprar bono"
                 )}
               </Button>
             </div>
