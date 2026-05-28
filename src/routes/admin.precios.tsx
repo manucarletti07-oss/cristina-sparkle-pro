@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ArrowLeft, Plus, Trash2, Pencil, X, Check, Lock } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Pencil, X, Check, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PrivateAccessGate } from "@/components/PrivateAccessGate";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,11 +23,15 @@ import {
   updateServicio,
   createServicio,
   deleteServicio,
+  getBonosCatalogo,
+  updateBonoCatalogo,
+  createBonoCatalogo,
+  deleteBonoCatalogo,
   type Servicio,
+  type BonoCatalogo,
 } from "@/lib/storage";
 
-const PRECIOS_PASSWORD = "ingresos123";
-const SESSION_KEY = "ingresos_unlocked";
+const SESSION_KEY = "private_precios_unlocked";
 
 export const Route = createFileRoute("/admin/precios")({
   head: () => ({
@@ -42,9 +47,10 @@ function Precios() {
   const { isAuth, loading } = useAuth();
   const navigate = useNavigate();
   const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [bonos, setBonos] = useState<BonoCatalogo[]>([]);
   const [unlocked, setUnlocked] = useState(false);
-  const [pwd, setPwd] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingBonoId, setEditingBonoId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string }>({
     nombre: "",
     categoria: "",
@@ -55,18 +61,26 @@ function Precios() {
     categoria: "",
     precio: "",
   });
+  const [draftBono, setDraftBono] = useState<{ nombre: string; sesiones: string; precio: string }>({
+    nombre: "",
+    sesiones: "",
+    precio: "",
+  });
+  const [nuevoBono, setNuevoBono] = useState<{ nombre: string; sesiones: string; precio: string }>({
+    nombre: "",
+    sesiones: "",
+    precio: "",
+  });
 
   useEffect(() => {
     if (loading) return;
     if (!isAuth) { navigate({ to: "/" }); return; }
-    if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1") {
-      setUnlocked(true);
-    }
   }, [loading, isAuth, navigate]);
 
   useEffect(() => {
     if (!unlocked) return;
     getServicios().then(setServicios);
+    getBonosCatalogo().then(setBonos);
   }, [unlocked]);
 
   const startEdit = (s: Servicio) => {
