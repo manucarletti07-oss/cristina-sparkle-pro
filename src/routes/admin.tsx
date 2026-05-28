@@ -56,6 +56,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
 import { ClienteSearchDropdown } from "@/components/ClienteSearchDropdown";
+import { BuyBonoAdminModal } from "@/components/BuyBonoAdminModal";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -94,6 +95,7 @@ function Admin() {
   const [anchorDate, setAnchorDate] = useState<string>(today);
   const [ready, setReady] = useState(false);
   const [openNew, setOpenNew] = useState(false);
+  const [openBono, setOpenBono] = useState(false);
   const [editing, setEditing] = useState<Cita | null>(null);
 
   useEffect(() => {
@@ -279,6 +281,13 @@ function Admin() {
               <Link to="/admin/precios">Precios</Link>
             </Button>
             <Button
+              onClick={() => setOpenBono(true)}
+              variant="outline"
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+            >
+              <Gift className="size-4" /> Comprar bono
+            </Button>
+            <Button
               onClick={handleLogout}
               variant="outline"
               className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
@@ -424,6 +433,7 @@ function Admin() {
 
       <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
       <EditCitaModal cita={editing} open={!!editing} onOpenChange={(v) => !v && setEditing(null)} />
+      <BuyBonoAdminModal open={openBono} onOpenChange={setOpenBono} />
     </div>
   );
 }
