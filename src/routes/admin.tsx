@@ -459,7 +459,7 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
   );
 }
 
-function CitaCard({ cita, bono, onDone, onDelete, onEdit }: { cita: Cita; bono: Bono | null; onDone: () => void; onDelete: () => void; onEdit: () => void }) {
+function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Cita; bono: Bono | null; onDone: () => void; onDelete: () => void; onEdit: () => void; onCobrar: () => void }) {
   const fechaFmt = (() => {
     try {
       return format(parseISO(cita.fecha), "EEEE d 'de' MMMM yyyy", { locale: es });
@@ -563,6 +563,26 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit }: { cita: Cita; bono: 
               className="flex-1 lg:w-full justify-center bg-emerald-500 text-white hover:bg-emerald-600 shadow-md font-semibold"
             >
               <CheckCircle2 className="size-4" /> Realizada
+            </Button>
+          )}
+          {!cita.cobrada && (
+            <Button
+              onClick={onCobrar}
+              variant="outline"
+              className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
+            >
+              <Euro className="size-4" /> Cobrar {cita.total}€
+            </Button>
+          )}
+          {cita.clienteId && (
+            <Button
+              asChild
+              variant="outline"
+              className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
+            >
+              <Link to="/admin/cliente/$id" params={{ id: cita.clienteId }}>
+                <UserIcon className="size-4" /> Ver ficha
+              </Link>
             </Button>
           )}
           <Button
