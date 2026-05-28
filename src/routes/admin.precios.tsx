@@ -200,6 +200,36 @@ function Precios() {
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+        <section className="glass-dark rounded-2xl p-5 space-y-4">
+          <h2 className="font-display text-xl flex items-center gap-2">
+            <Gift className="size-5 text-primary" /> Bonos
+          </h2>
+          <div className="grid sm:grid-cols-[1fr_120px_140px_auto] gap-3 items-end">
+            <Input value={nuevoBono.nombre} onChange={(e) => setNuevoBono((p) => ({ ...p, nombre: e.target.value }))} placeholder="Nombre del bono" className="bg-background/5 border-primary/30 text-background" />
+            <Input type="number" min={1} value={nuevoBono.sesiones} onChange={(e) => setNuevoBono((p) => ({ ...p, sesiones: e.target.value }))} placeholder="Sesiones" className="bg-background/5 border-primary/30 text-background" />
+            <Input type="number" min={0} value={nuevoBono.precio} onChange={(e) => setNuevoBono((p) => ({ ...p, precio: e.target.value }))} placeholder="Precio" className="bg-background/5 border-primary/30 text-background" />
+            <Button onClick={createBono} className="bg-primary text-primary-foreground hover:bg-primary/90 h-10"><Plus className="size-4" /> Crear</Button>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-primary/10">
+            <table className="w-full text-sm">
+              <thead className="bg-primary/10 text-primary text-[11px] uppercase tracking-[0.2em]"><tr><th className="text-left p-3">Bono</th><th className="text-left p-3">Sesiones</th><th className="text-left p-3">Precio</th><th className="text-right p-3"></th></tr></thead>
+              <tbody>
+                {bonos.map((b) => {
+                  const isEditing = editingBonoId === b.id;
+                  return (
+                    <tr key={b.id} className="border-t border-primary/10">
+                      <td className="p-3">{isEditing ? <Input value={draftBono.nombre} onChange={(e) => setDraftBono((p) => ({ ...p, nombre: e.target.value }))} className="bg-background/5 border-primary/30 text-background h-9" /> : b.nombre}</td>
+                      <td className="p-3">{isEditing ? <Input type="number" min={1} value={draftBono.sesiones} onChange={(e) => setDraftBono((p) => ({ ...p, sesiones: e.target.value }))} className="bg-background/5 border-primary/30 text-background h-9" /> : b.sesiones}</td>
+                      <td className="p-3">{isEditing ? <Input type="number" min={0} value={draftBono.precio} onChange={(e) => setDraftBono((p) => ({ ...p, precio: e.target.value }))} className="bg-background/5 border-primary/30 text-background h-9" /> : `${b.precio}€`}</td>
+                      <td className="p-3 text-right"><div className="flex justify-end gap-2">{isEditing ? <><Button size="sm" onClick={() => saveBono(b)} className="bg-primary text-primary-foreground hover:bg-primary/90"><Check className="size-4" /> Guardar</Button><Button size="sm" variant="outline" onClick={cancelEditBono} className="border-primary/30 text-primary bg-transparent"><X className="size-4" /></Button></> : <><Button size="sm" variant="outline" onClick={() => startEditBono(b)} className="border-primary/30 text-primary bg-transparent"><Pencil className="size-4" /> Modificar</Button><Button size="sm" variant="outline" onClick={() => removeBono(b)} className="border-destructive/40 text-destructive bg-transparent hover:bg-destructive hover:text-destructive-foreground"><Trash2 className="size-4" /></Button></>}</div></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {/* NUEVO SERVICIO */}
         <section className="glass-dark rounded-2xl p-5 space-y-4">
           <h2 className="font-display text-xl flex items-center gap-2">
