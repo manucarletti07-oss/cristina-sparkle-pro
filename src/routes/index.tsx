@@ -5,7 +5,6 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BookingModal } from "@/components/BookingModal";
 import { ServiceInfoModal } from "@/components/ServiceInfoModal";
-import { BuyBonoModal } from "@/components/BuyBonoModal";
 import { Button } from "@/components/ui/button";
 import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
 import { getBonosCatalogo, type BonoCatalogo } from "@/lib/storage";
@@ -45,7 +44,6 @@ function Index() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
   const [preselected, setPreselected] = useState<(Treatment & { categoria: ServiceCategory }) | null>(null);
-  const [buyBonoOpen, setBuyBonoOpen] = useState(false);
   const [bonoPrincipal, setBonoPrincipal] = useState<BonoCatalogo | null>(null);
 
   useEffect(() => {
@@ -171,12 +169,9 @@ function Index() {
                 <li>Válido para cualquier tratamiento</li>
                 <li>Vinculado a tu teléfono</li>
               </ul>
-              <Button
-                onClick={() => setBuyBonoOpen(true)}
-                className="bg-foreground text-background hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.25em] rounded-full px-8"
-              >
-                Comprar bono
-              </Button>
+              <p className="text-xs text-muted-foreground italic">
+                Consulta en el centro para adquirir tu bono.
+              </p>
             </div>
           </div>
         </div>
@@ -265,7 +260,6 @@ function Index() {
         category={infoCategory}
         onBook={openBookingFor}
       />
-      <BuyBonoModal open={buyBonoOpen} onOpenChange={setBuyBonoOpen} />
     </div>
   );
 }
