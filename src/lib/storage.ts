@@ -390,6 +390,43 @@ export async function updateServicioPrecio(id: string, precio: number) {
   return { ok: true as const };
 }
 
+export async function updateServicio(id: string, patch: Partial<Omit<Servicio, "id">>) {
+  const { error } = await supabase.from("servicios").update(patch).eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
+export async function createServicio(input: {
+  nombre: string;
+  categoria: string;
+  precio: number;
+  duracion_min?: number;
+  requiere_maquina?: boolean;
+  sala_requerida?: number | null;
+}): Promise<{ ok: true; servicio: Servicio } | { ok: false; error: string }> {
+  const { data, error } = await supabase
+    .from("servicios")
+    .insert({
+      nombre: input.nombre.trim(),
+      categoria: input.categoria.trim().toLowerCase(),
+      precio: input.precio,
+      duracion_min: input.duracion_min ?? 45,
+      requiere_maquina: input.requiere_maquina ?? false,
+      sala_requerida: input.sala_requerida ?? null,
+      activo: true,
+    })
+    .select("id,nombre,categoria,precio,duracion_min,requiere_maquina,sala_requerida,activo")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, servicio: data as Servicio };
+}
+
+export async function deleteServicio(id: string) {
+  const { error } = await supabase.from("servicios").delete().eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
 // ====== CATÁLOGO DE BONOS ======
 export type BonoCatalogo = {
   id: string;
