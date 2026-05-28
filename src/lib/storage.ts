@@ -244,6 +244,64 @@ export async function searchClientes(q: string, limit = 8): Promise<Cliente[]> {
   return (data as Cliente[]) ?? [];
 }
 
+export type ClienteConHistorial = Cliente & {
+  pasadas: number;
+  futuras: number;
+  proximaCita: { fecha: string; hora: string } | null;
+};
+
+export async function searchClientesConHistorial(
+  q: string,
+  limit = 10
+): Promise<ClienteConHistorial[]> {
+  const base = await searchClientes(q, limit);
+  if (base.length === 0) return [];
+  const ids = base.map((c) => c.id);
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: citas } = await supabase
+    .from("citas")
+    .select("cliente_id,fecha,hora,estado")
+    .in("cliente_id", ids);
+  const byCli = new Map<string, { pasadas: number; futuras: number; proxima: { fecha: string; hora: string } | null }>();
+  for (const row of (citas ?? []) as { cliente_id: string; fecha: string; hora: string; estado: string }[]) {
+    if (!row.cliente_id) continue;
+    const entry = byCli.get(row.cliente_id) ?? { pasadas: 0, futuras: 0, proxima: null };
+    if (row.fecha < today || row.estado === "realizada") {
+      entry.pasadas += 1;
+    } else {
+      entry.futuras += 1;
+      const cur = entry.proxima;
+      if (!cur || row.fecha < cur.fecha || (row.fecha === cur.fecha && row.hora < cur.hora)) {
+        entry.proxima = { fecha: row.fecha, hora: row.hora };
+      }
+    }
+    byCli.set(row.cliente_id, entry);
+  }
+  return base.map((c) => {
+    const s = byCli.get(c.id);
+    return {
+      ...c,
+      pasadas: s?.pasadas ?? 0,
+      futuras: s?.futuras ?? 0,
+      proximaCita: s?.proxima ?? null,
+    };
+  });
+}
+
+// ====== INGRESOS POR RANGO ======
+export async function getCitasCobradasRango(desde: string, hasta: string): Promise<Cita[]> {
+  const { data, error } = await supabase
+    .from("citas")
+    .select("*, clientes(nombre, apellido_1, apellido_2, telefono, email, alias, observaciones)")
+    .eq("cobrada", true)
+    .gte("fecha", desde)
+    .lte("fecha", hasta)
+    .order("fecha", { ascending: false })
+    .order("hora", { ascending: false });
+  if (error) return [];
+  return (data as Row[]).map(toCita);
+}
+
 // ====== BONOS ======
 export type Bono = {
   id: string;
