@@ -1,0 +1,192 @@
+import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+import { ArrowLeft, Euro, Lock } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth-context";
+import { getCitasCobradas, type Cita } from "@/lib/storage";
+
+const INGRESOS_PASSWORD = "ingresos123";
+const SESSION_KEY = "ingresos_unlocked";
+
+export const Route = createFileRoute("/admin/ingresos")({
+  head: () => ({
+    meta: [
+      { title: "Ingresos · Privado" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
+  component: Ingresos,
+});
+
+function Ingresos() {
+  const { isAuth, loading } = useAuth();
+  const navigate = useNavigate();
+  const [unlocked, setUnlocked] = useState(false);
+  const [pwd, setPwd] = useState("");
+  const [citas, setCitas] = useState<Cita[]>([]);
+  const today = new Date().toISOString().slice(0, 10);
+  const [fecha, setFecha] = useState(today);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!isAuth) {
+      navigate({ to: "/" });
+      return;
+    }
+    if (sessionStorage.getItem(SESSION_KEY) === "1") setUnlocked(true);
+  }, [loading, isAuth, navigate]);
+
+  useEffect(() => {
+    if (!unlocked) return;
+    getCitasCobradas(fecha).then(setCitas);
+  }, [unlocked, fecha]);
+
+  const stats = useMemo(() => {
+    const total = citas.reduce((s, c) => s + (c.total || 0), 0);
+    const porProfesional = citas.reduce<Record<string, number>>((acc, c) => {
+      acc[c.profesional] = (acc[c.profesional] || 0) + (c.total || 0);
+      return acc;
+    }, {});
+    return { total, porProfesional, count: citas.length };
+  }, [citas]);
+
+  if (loading || !isAuth) return null;
+
+  if (!unlocked) {
+    return (
+      <div className="min-h-screen bg-foreground text-background flex items-center justify-center p-6">
+        <div className="glass-dark rounded-2xl p-8 w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <div className="mx-auto size-14 rounded-full bg-primary/15 flex items-center justify-center">
+              <Lock className="size-6 text-primary" />
+            </div>
+            <h1 className="font-display text-2xl">Ingresos · Acceso privado</h1>
+            <p className="text-sm text-background/60">Introduce la contraseña para continuar.</p>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (pwd === INGRESOS_PASSWORD) {
+                sessionStorage.setItem(SESSION_KEY, "1");
+                setUnlocked(true);
+              } else {
+                toast.error("Contraseña incorrecta");
+              }
+            }}
+            className="space-y-3"
+          >
+            <div className="space-y-2">
+              <Label className="text-background/80">Contraseña</Label>
+              <Input
+                type="password"
+                value={pwd}
+                onChange={(e) => setPwd(e.target.value)}
+                className="bg-background/5 border-primary/30 text-background"
+                autoFocus
+              />
+            </div>
+            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              Entrar
+            </Button>
+            <Button asChild type="button" variant="outline" className="w-full border-primary/30 text-primary bg-transparent">
+              <Link to="/admin"><ArrowLeft className="size-4" /> Volver al panel</Link>
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-foreground text-background">
+      <header className="border-b border-primary/20 bg-foreground/95 sticky top-0 z-30 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <Link to="/admin" className="flex items-center gap-2 text-primary text-xs uppercase tracking-[0.2em]">
+            <ArrowLeft className="size-4" /> Panel
+          </Link>
+          <h1 className="font-display text-xl">Ingresos</h1>
+          <Button
+            variant="outline"
+            onClick={() => { sessionStorage.removeItem(SESSION_KEY); setUnlocked(false); }}
+            className="border-primary/30 text-primary bg-transparent text-xs"
+          >
+            Bloquear
+          </Button>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-2">
+            <Label className="text-background/70 text-xs uppercase tracking-[0.2em]">Fecha</Label>
+            <Input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className="bg-background/5 border-primary/30 text-background w-[200px]"
+            />
+          </div>
+          <Button variant="outline" onClick={() => setFecha(today)} className="border-primary/30 text-primary bg-transparent">
+            Hoy
+          </Button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card label="Total recaudado" value={`${stats.total}€`} />
+          <Card label="Citas cobradas" value={String(stats.count)} />
+          <Card
+            label="Por profesional"
+            value={Object.entries(stats.porProfesional).map(([k, v]) => `${k}: ${v}€`).join(" · ") || "—"}
+          />
+        </div>
+
+        <div className="glass-dark rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-primary/10 text-primary text-[11px] uppercase tracking-[0.2em]">
+              <tr>
+                <th className="text-left p-3">Cliente</th>
+                <th className="text-left p-3">Servicios</th>
+                <th className="text-left p-3">Hora</th>
+                <th className="text-left p-3">Profesional</th>
+                <th className="text-right p-3">Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {citas.length === 0 ? (
+                <tr><td colSpan={5} className="p-6 text-center text-background/50">Sin cobros en esta fecha.</td></tr>
+              ) : citas.map((c) => (
+                <tr key={c.id} className="border-t border-primary/10">
+                  <td className="p-3">{c.nombre} {c.apellido_1 ?? ""}</td>
+                  <td className="p-3 text-background/70">{c.servicios.join(", ")}</td>
+                  <td className="p-3">{c.hora}</td>
+                  <td className="p-3 capitalize">{c.profesional}</td>
+                  <td className="p-3 text-right font-semibold text-primary">
+                    <Euro className="inline size-3.5" /> {c.precio_cobrado ?? c.total}€
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="text-xs text-background/40">
+          Fecha: {format(parseISO(fecha), "EEEE d 'de' MMMM yyyy", { locale: es })}
+        </p>
+      </main>
+    </div>
+  );
+}
+
+function Card({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="glass-dark rounded-2xl p-5">
+      <p className="text-[10px] uppercase tracking-[0.25em] text-primary">{label}</p>
+      <p className="font-display text-2xl text-background mt-2 break-words">{value}</p>
+    </div>
+  );
+}
