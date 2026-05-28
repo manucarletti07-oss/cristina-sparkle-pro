@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { format, parseISO } from "date-fns";
+import {
+  format,
+  parseISO,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  addDays,
+  addWeeks,
+  addMonths,
+} from "date-fns";
 import { es } from "date-fns/locale";
 import {
   Calendar as CalendarIcon,
@@ -18,6 +28,8 @@ import {
   Search,
   Pencil,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -57,6 +69,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 type Filter = "todas" | "pendiente" | "realizada";
+type Vista = "dia" | "semana" | "mes";
 
 function whatsappUrl(cita: Cita) {
   const phone = cita.telefono.replace(/[^\d]/g, "");
@@ -76,7 +89,8 @@ function Admin() {
   const [profesionalQuery, setProfesionalQuery] = useState<"todas" | Profesional>("todas");
   const today = new Date().toISOString().slice(0, 10);
   const [nameQuery, setNameQuery] = useState("");
-  const [dateQuery, setDateQuery] = useState<string>(today);
+  const [vista, setVista] = useState<Vista>("dia");
+  const [anchorDate, setAnchorDate] = useState<string>(today);
   const [ready, setReady] = useState(false);
   const [openNew, setOpenNew] = useState(false);
   const [editing, setEditing] = useState<Cita | null>(null);
@@ -116,31 +130,61 @@ function Admin() {
     };
   }, [authLoading, isAuth, navigate]);
 
-  // Citas del día / rango seleccionado (sin filtro de estado ni de nombre)
-  const citasDelDia = useMemo(() => {
-    const dia = citas.filter((c) => c.fecha === dateQuery);
-    return profesionalQuery === "todas" ? dia : dia.filter((c) => c.profesional === profesionalQuery);
-  }, [citas, dateQuery, profesionalQuery]);
+  // Rango actual según vista (día / semana / mes)
+  const rango = useMemo(() => {
+    const ref = parseISO(anchorDate);
+    if (vista === "dia") return { desde: anchorDate, hasta: anchorDate };
+    if (vista === "semana") {
+      const ini = startOfWeek(ref, { weekStartsOn: 1 });
+      const fin = endOfWeek(ref, { weekStartsOn: 1 });
+      return { desde: format(ini, "yyyy-MM-dd"), hasta: format(fin, "yyyy-MM-dd") };
+    }
+    const ini = startOfMonth(ref);
+    const fin = endOfMonth(ref);
+    return { desde: format(ini, "yyyy-MM-dd"), hasta: format(fin, "yyyy-MM-dd") };
+  }, [vista, anchorDate]);
+
+  const rangoLabel = useMemo(() => {
+    const desde = parseISO(rango.desde);
+    const hasta = parseISO(rango.hasta);
+    if (vista === "dia") return format(desde, "EEEE d 'de' MMMM yyyy", { locale: es });
+    if (vista === "semana")
+      return `${format(desde, "d MMM", { locale: es })} – ${format(hasta, "d MMM yyyy", { locale: es })}`;
+    return format(desde, "MMMM yyyy", { locale: es });
+  }, [rango, vista]);
+
+  const shift = (dir: 1 | -1) => {
+    const ref = parseISO(anchorDate);
+    const next =
+      vista === "dia" ? addDays(ref, dir) : vista === "semana" ? addWeeks(ref, dir) : addMonths(ref, dir);
+    setAnchorDate(format(next, "yyyy-MM-dd"));
+  };
+
+  // Citas dentro del rango seleccionado (sin filtros de estado/nombre todavía)
+  const citasDelRango = useMemo(() => {
+    const base = citas.filter((c) => c.fecha >= rango.desde && c.fecha <= rango.hasta);
+    return profesionalQuery === "todas" ? base : base.filter((c) => c.profesional === profesionalQuery);
+  }, [citas, rango, profesionalQuery]);
 
   const stats = useMemo(() => {
-    const pendientes = citasDelDia.filter((c) => c.estado === "pendiente");
-    const realizadas = citasDelDia.filter((c) => c.estado === "realizada");
+    const pendientes = citasDelRango.filter((c) => c.estado === "pendiente");
+    const realizadas = citasDelRango.filter((c) => c.estado === "realizada");
     const ingresos = realizadas.reduce((s, c) => s + c.total, 0);
     const previstos = pendientes.reduce((s, c) => s + c.total, 0);
     return {
-      total: citasDelDia.length,
+      total: citasDelRango.length,
       pendientes: pendientes.length,
       realizadas: realizadas.length,
       ingresos,
       previstos,
     };
-  }, [citasDelDia]);
+  }, [citasDelRango]);
 
   const visible = useMemo(() => {
     const n = nameQuery.trim().toLowerCase();
     const base = n
       ? (profesionalQuery === "todas" ? citas : citas.filter((c) => c.profesional === profesionalQuery))
-      : citasDelDia;
+      : citasDelRango;
     return base
       .filter((c) => (filter === "todas" ? true : c.estado === filter))
       .filter((c) => {
@@ -152,7 +196,7 @@ function Admin() {
           c.apellido_2?.toLowerCase().includes(n)
         );
       });
-  }, [citas, citasDelDia, filter, nameQuery, profesionalQuery]);
+  }, [citas, citasDelRango, filter, nameQuery, profesionalQuery]);
 
   const bonosVisibles = useMemo(() => {
     const n = nameQuery.trim().toLowerCase();
@@ -245,7 +289,7 @@ function Admin() {
         </div>
 
         {/* SEARCH */}
-        <div className="mb-8 grid gap-3 md:grid-cols-[1fr_220px_auto_auto]">
+        <div className="mb-6 grid gap-3 md:grid-cols-[1fr_220px_auto]">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-primary" />
             <Input
@@ -266,51 +310,61 @@ function Admin() {
               ))}
             </SelectContent>
           </Select>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground justify-start min-w-[210px]"
-              >
-                <CalendarIcon className="size-4" />
-                {dateQuery
-                  ? format(parseISO(dateQuery), "EEE d 'de' MMM yyyy", { locale: es })
-                  : "Todas las fechas"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-50" align="end">
-              <Calendar
-                mode="single"
-                selected={dateQuery ? parseISO(dateQuery) : undefined}
-                onSelect={(d) => setDateQuery(d ? format(d, "yyyy-MM-dd") : "")}
-                locale={es}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-              <div className="flex gap-2 p-3 border-t border-border">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setDateQuery(today)}
-                >
-                  Hoy
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button
-            onClick={() => { setNameQuery(""); setDateQuery(today); setProfesionalQuery("todas"); }}
-            variant="outline"
-            className="h-12 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
-          >
-            Hoy
-          </Button>
           <Button
             onClick={() => setOpenNew(true)}
             className="h-12 bg-primary text-primary-foreground hover:bg-primary/90 text-xs uppercase tracking-[0.2em]"
           >
             <Plus className="size-4" /> Nueva cita
+          </Button>
+        </div>
+
+        {/* VISTA: DÍA / SEMANA / MES */}
+        <div className="mb-8 flex flex-wrap items-center gap-3">
+          <div className="inline-flex rounded-full border border-primary/30 bg-background/5 p-1">
+            {(["dia", "semana", "mes"] as Vista[]).map((v) => (
+              <button
+                key={v}
+                onClick={() => setVista(v)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-[11px] uppercase tracking-[0.2em] font-semibold transition-colors",
+                  vista === v ? "bg-primary text-primary-foreground" : "text-background/70 hover:text-primary"
+                )}
+              >
+                {v === "dia" ? "Día" : v === "semana" ? "Semana" : "Mes"}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 rounded-full border border-primary/30 bg-background/5">
+            <Button variant="ghost" size="icon" onClick={() => shift(-1)} className="rounded-full text-primary hover:bg-primary/10">
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" className="text-background hover:bg-primary/10 min-w-[260px] capitalize">
+                  <CalendarIcon className="size-4 text-primary" /> {rangoLabel}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-50" align="center">
+                <Calendar
+                  mode="single"
+                  selected={parseISO(anchorDate)}
+                  onSelect={(d) => d && setAnchorDate(format(d, "yyyy-MM-dd"))}
+                  locale={es}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button variant="ghost" size="icon" onClick={() => shift(1)} className="rounded-full text-primary hover:bg-primary/10">
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+          <Button
+            onClick={() => setAnchorDate(today)}
+            variant="outline"
+            className="h-9 border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+          >
+            Hoy
           </Button>
         </div>
 
@@ -322,7 +376,11 @@ function Admin() {
 
         {/* STATS (sin ingresos: ver en sección privada) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-          <StatCard label={dateQuery ? "Citas del día" : "Total citas"} value={String(stats.total)} icon={<CalendarIcon className="size-4" />} />
+          <StatCard
+            label={vista === "dia" ? "Citas del día" : vista === "semana" ? "Citas de la semana" : "Citas del mes"}
+            value={String(stats.total)}
+            icon={<CalendarIcon className="size-4" />}
+          />
           <StatCard label="Por hacer" value={String(stats.pendientes)} icon={<Clock className="size-4" />} />
           <StatCard label="Realizadas" value={String(stats.realizadas)} icon={<CheckCircle2 className="size-4" />} />
         </div>
