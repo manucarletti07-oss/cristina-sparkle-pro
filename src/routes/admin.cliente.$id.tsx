@@ -5,8 +5,21 @@ import { es } from "date-fns/locale";
 import { ArrowLeft, Save, Upload, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-context";
 import {
   getClienteById,
@@ -16,6 +29,8 @@ import {
   uploadFotoCliente,
   deleteFotoCliente,
   updateClienteObservaciones,
+  updateCliente,
+  deleteCliente,
   type Cliente,
   type Cita,
   type Bono,
@@ -42,6 +57,16 @@ function ClienteFicha() {
   const [fotos, setFotos] = useState<FotoCliente[]>([]);
   const [obs, setObs] = useState("");
   const [savingObs, setSavingObs] = useState(false);
+  const [edit, setEdit] = useState({
+    nombre: "",
+    apellido_1: "",
+    apellido_2: "",
+    telefono: "",
+    email: "",
+    alias: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => {
@@ -53,6 +78,16 @@ function ClienteFicha() {
     ]).then(([c, ci, b, f]) => {
       setCliente(c);
       setObs(c?.observaciones ?? "");
+      if (c) {
+        setEdit({
+          nombre: c.nombre ?? "",
+          apellido_1: c.apellido_1 ?? "",
+          apellido_2: c.apellido_2 ?? "",
+          telefono: c.telefono ?? "",
+          email: c.email ?? "",
+          alias: c.alias ?? "",
+        });
+      }
       setCitas(ci);
       setBonos(b);
       setFotos(f);
@@ -75,6 +110,32 @@ function ClienteFicha() {
     setSavingObs(false);
     if (!res.ok) toast.error(res.error);
     else toast.success("Observaciones guardadas");
+  };
+
+  const saveEdit = async () => {
+    if (!edit.nombre.trim()) return toast.error("El nombre es obligatorio");
+    setSavingEdit(true);
+    const res = await updateCliente(id, {
+      nombre: edit.nombre.trim(),
+      apellido_1: edit.apellido_1.trim() || null,
+      apellido_2: edit.apellido_2.trim() || null,
+      telefono: edit.telefono.trim() || null,
+      email: edit.email.trim() || null,
+      alias: edit.alias.trim() || null,
+    });
+    setSavingEdit(false);
+    if (!res.ok) return toast.error(res.error);
+    toast.success("Cliente actualizado");
+    load();
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    const res = await deleteCliente(id);
+    setDeleting(false);
+    if (!res.ok) return toast.error(res.error);
+    toast.success("Cliente eliminado");
+    navigate({ to: "/admin" });
   };
 
   const onUpload = async (file: File) => {
@@ -107,6 +168,66 @@ function ClienteFicha() {
           <p className="text-sm text-background/60 mt-2">
             {cliente.telefono ?? "—"} · {cliente.email ?? "Sin email"}{cliente.alias ? ` · alias: ${cliente.alias}` : ""}
           </p>
+        </section>
+
+        <section className="glass-dark rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <h3 className="font-display text-xl">Editar datos del cliente</h3>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="border-destructive/50 text-destructive bg-transparent hover:bg-destructive hover:text-destructive-foreground">
+                  <Trash2 className="size-4" /> Eliminar cliente
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Eliminar este cliente?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Se eliminará <strong>{cliente.nombre} {cliente.apellido_1 ?? ""}</strong> de forma permanente. Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleting ? "Eliminando…" : "Eliminar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-background/70">Nombre</Label>
+              <Input value={edit.nombre} onChange={(e) => setEdit({ ...edit, nombre: e.target.value })} className="bg-background/5 border-primary/30 text-background" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-background/70">Alias</Label>
+              <Input value={edit.alias} onChange={(e) => setEdit({ ...edit, alias: e.target.value })} className="bg-background/5 border-primary/30 text-background" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-background/70">Apellido 1</Label>
+              <Input value={edit.apellido_1} onChange={(e) => setEdit({ ...edit, apellido_1: e.target.value })} className="bg-background/5 border-primary/30 text-background" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-background/70">Apellido 2</Label>
+              <Input value={edit.apellido_2} onChange={(e) => setEdit({ ...edit, apellido_2: e.target.value })} className="bg-background/5 border-primary/30 text-background" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-background/70">Teléfono</Label>
+              <Input value={edit.telefono} onChange={(e) => setEdit({ ...edit, telefono: e.target.value })} className="bg-background/5 border-primary/30 text-background" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-background/70">Email</Label>
+              <Input type="email" value={edit.email} onChange={(e) => setEdit({ ...edit, email: e.target.value })} className="bg-background/5 border-primary/30 text-background" />
+            </div>
+          </div>
+          <Button onClick={saveEdit} disabled={savingEdit} className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Save className="size-4" /> {savingEdit ? "Guardando…" : "Guardar cambios"}
+          </Button>
         </section>
 
         <section className="grid lg:grid-cols-2 gap-6">
