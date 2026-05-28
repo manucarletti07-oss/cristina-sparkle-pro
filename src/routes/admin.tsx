@@ -39,7 +39,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { deleteCita, getBonosPanel, getCitas, PROFESIONALES, updateCita, type Cita, type Bono, type Profesional } from "@/lib/storage";
+import { deleteCita, getBonosPanel, getCitas, marcarCitaCobrada, PROFESIONALES, updateCita, type Cita, type Bono, type Profesional } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
@@ -61,7 +61,7 @@ function whatsappUrl(cita: Cita) {
   const phone = cita.telefono.replace(/[^\d]/g, "");
   const clean = phone.length === 9 ? `34${phone}` : phone;
   const msg = encodeURIComponent(
-    `Hola, desde Cristina Febrián le recordamos que hoy tiene cita a las ${cita.hora}.`
+    `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`
   );
   return `https://wa.me/${clean}?text=${msg}`;
 }
@@ -180,6 +180,12 @@ function Admin() {
     toast("Cita eliminada", { description: `${c.nombre} · ${c.fecha}` });
   };
 
+  const cobrar = async (c: Cita) => {
+    const res = await marcarCitaCobrada(c.id, c.total);
+    if (!res.ok) return toast.error(res.error);
+    toast.success(`Cobro registrado · ${c.total}€`);
+  };
+
   // Bono activo por cliente (más reciente, con sesiones > 0)
   const bonoActivoByCliente = useMemo(() => {
     const map = new Map<string, Bono>();
@@ -212,13 +218,21 @@ function Admin() {
               <h1 className="font-display text-xl text-background">Cristina Cebrián</h1>
             </div>
           </Link>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
-          >
-            <LogOut className="size-4" /> Cerrar sesión
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]">
+              <Link to="/admin/ingresos">Ingresos</Link>
+            </Button>
+            <Button asChild variant="outline" className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]">
+              <Link to="/admin/precios">Precios</Link>
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+            >
+              <LogOut className="size-4" /> Salir
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -331,10 +345,10 @@ function Admin() {
 
         {/* LIST */}
         <div className="grid lg:grid-cols-2 gap-8">
-          <AgendaColumna titulo="Agenda de Cristina" citas={cristinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
-          <AgendaColumna titulo="Agenda de Jenny" citas={jennyCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
-          <AgendaColumna titulo="Agenda de Nerea" citas={nereaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
-          <AgendaColumna titulo="Agenda Máquina (Sala 1)" citas={maquinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} getBono={getBonoForCita} />
+          <AgendaColumna titulo="Agenda de Cristina" citas={cristinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} onCobrar={cobrar} getBono={getBonoForCita} />
+          <AgendaColumna titulo="Agenda de Jenny" citas={jennyCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} onCobrar={cobrar} getBono={getBonoForCita} />
+          <AgendaColumna titulo="Agenda de Nerea" citas={nereaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} onCobrar={cobrar} getBono={getBonoForCita} />
+          <AgendaColumna titulo="Agenda Máquina (Sala 1)" citas={maquinaCitas} onDone={markDone} onDelete={remove} onEdit={setEditing} onCobrar={cobrar} getBono={getBonoForCita} />
         </div>
 
         <BonosPanel bonos={bonosVisibles} />
@@ -352,6 +366,7 @@ function AgendaColumna({
   onDone,
   onDelete,
   onEdit,
+  onCobrar,
   getBono,
 }: {
   titulo: string;
@@ -359,6 +374,7 @@ function AgendaColumna({
   onDone: (c: Cita) => void;
   onDelete: (c: Cita) => void;
   onEdit: (c: Cita) => void;
+  onCobrar: (c: Cita) => void;
   getBono: (c: Cita) => Bono | null;
 }) {
   const ordenadas = [...citas].sort((a, b) =>
@@ -378,7 +394,7 @@ function AgendaColumna({
       ) : (
         <div className="grid gap-3">
           {ordenadas.map((c) => (
-            <CitaCard key={c.id} cita={c} bono={getBono(c)} onDone={() => onDone(c)} onDelete={() => onDelete(c)} onEdit={() => onEdit(c)} />
+            <CitaCard key={c.id} cita={c} bono={getBono(c)} onDone={() => onDone(c)} onDelete={() => onDelete(c)} onEdit={() => onEdit(c)} onCobrar={() => onCobrar(c)} />
           ))}
         </div>
       )}
