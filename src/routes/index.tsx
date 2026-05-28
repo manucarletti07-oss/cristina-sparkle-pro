@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Award, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
@@ -8,6 +8,7 @@ import { ServiceInfoModal } from "@/components/ServiceInfoModal";
 import { BuyBonoModal } from "@/components/BuyBonoModal";
 import { Button } from "@/components/ui/button";
 import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
+import { getBonosCatalogo, type BonoCatalogo } from "@/lib/storage";
 import heroImg from "@/assets/momento.jpg";
 import facialImg from "@/assets/facial-trabajo.jpg";
 import corporalImg from "@/assets/cabina.jpg";
@@ -45,6 +46,11 @@ function Index() {
   const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
   const [preselected, setPreselected] = useState<(Treatment & { categoria: ServiceCategory }) | null>(null);
   const [buyBonoOpen, setBuyBonoOpen] = useState(false);
+  const [bonoPrincipal, setBonoPrincipal] = useState<BonoCatalogo | null>(null);
+
+  useEffect(() => {
+    getBonosCatalogo().then((bonos) => setBonoPrincipal(bonos[0] ?? null));
+  }, []);
 
   const openInfo = (c: ServiceCategory) => {
     setInfoCategory(c);
@@ -153,15 +159,15 @@ function Index() {
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] font-semibold">
                 Más vendido
               </span>
-              <h3 className="font-display text-3xl text-foreground">Bono de 10 sesiones</h3>
+              <h3 className="font-display text-3xl text-foreground">{bonoPrincipal?.nombre ?? "Bono de 10 sesiones"}</h3>
               <p className="text-sm text-muted-foreground mt-3 max-w-xs mx-auto">
                 Reserva cualquier tratamiento y aplica una sesión del bono al pagar. Se descuenta automáticamente.
               </p>
               <div className="my-7">
-                <span className="font-display text-6xl text-foreground">150€</span>
+                <span className="font-display text-6xl text-foreground">{bonoPrincipal?.precio ?? 150}€</span>
               </div>
               <ul className="text-sm text-foreground/75 mb-7 space-y-1">
-                <li>10 sesiones a tu nombre</li>
+                <li>{bonoPrincipal?.sesiones ?? 10} sesiones a tu nombre</li>
                 <li>Válido para cualquier tratamiento</li>
                 <li>Vinculado a tu teléfono</li>
               </ul>
