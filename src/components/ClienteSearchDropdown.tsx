@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Search, User as UserIcon, X } from "lucide-react";
+import { Search, User as UserIcon, X, CalendarCheck, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { searchClientes, type Cliente } from "@/lib/storage";
+import { searchClientesConHistorial, type ClienteConHistorial } from "@/lib/storage";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 
 export function ClienteSearchDropdown() {
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<Cliente[]>([]);
+  const [results, setResults] = useState<ClienteConHistorial[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ export function ClienteSearchDropdown() {
     }
     setLoading(true);
     const t = setTimeout(async () => {
-      const r = await searchClientes(term, 12);
+      const r = await searchClientesConHistorial(term, 12);
       setResults(r);
       setLoading(false);
       setOpen(true);
@@ -36,7 +38,7 @@ export function ClienteSearchDropdown() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const pick = (c: Cliente) => {
+  const pick = (c: ClienteConHistorial) => {
     setOpen(false);
     setQ("");
     navigate({ to: "/admin/cliente/$id", params: { id: c.id } });
@@ -72,6 +74,9 @@ export function ClienteSearchDropdown() {
           )}
           {!loading && results.map((c) => {
             const fullName = [c.nombre, c.apellido_1, c.apellido_2].filter(Boolean).join(" ");
+            const proxima = c.proximaCita
+              ? `${format(parseISO(c.proximaCita.fecha), "d MMM", { locale: es })} · ${c.proximaCita.hora}`
+              : null;
             return (
               <button
                 key={c.id}
@@ -83,9 +88,27 @@ export function ClienteSearchDropdown() {
                   <UserIcon className="size-4" />
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm text-background truncate">{fullName || "Sin nombre"}</span>
+                  <span className="flex items-center gap-2 truncate">
+                    <span className="text-sm text-background truncate">{fullName || "Sin nombre"}</span>
+                    {c.alias && (
+                      <span className="text-[10px] uppercase tracking-[0.15em] text-primary/80 border border-primary/30 rounded-full px-1.5">
+                        {c.alias}
+                      </span>
+                    )}
+                  </span>
                   <span className="block text-xs text-background/55 truncate">
-                    {c.telefono ?? "Sin teléfono"}{c.alias ? ` · ${c.alias}` : ""}
+                    {c.telefono ?? "Sin teléfono"} · ID {c.id.slice(0, 8)}
+                  </span>
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px]">
+                    <span className="flex items-center gap-1 text-emerald-300">
+                      <CalendarCheck className="size-3" /> {c.futuras} futura{c.futuras === 1 ? "" : "s"}
+                    </span>
+                    <span className="flex items-center gap-1 text-background/60">
+                      <History className="size-3" /> {c.pasadas} realizada{c.pasadas === 1 ? "" : "s"}
+                    </span>
+                    {proxima && (
+                      <span className="text-primary/80">Próx: {proxima}</span>
+                    )}
                   </span>
                 </span>
                 <span className="text-[10px] uppercase tracking-[0.2em] text-primary">Ver ficha</span>
