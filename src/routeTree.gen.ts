@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminPreciosRouteImport } from './routes/admin.precios'
 import { Route as AdminIngresosRouteImport } from './routes/admin.ingresos'
 import { Route as ApiPublicHooksSendRemindersRouteImport } from './routes/api/public/hooks/send-reminders'
 
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPreciosRoute = AdminPreciosRouteImport.update({
+  id: '/precios',
+  path: '/precios',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminIngresosRoute = AdminIngresosRouteImport.update({
   id: '/ingresos',
   path: '/ingresos',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
   '/admin/ingresos': typeof AdminIngresosRoute
+  '/admin/precios': typeof AdminPreciosRoute
   '/api/public/hooks/send-reminders': typeof ApiPublicHooksSendRemindersRoute
 }
 export interface FileRoutesByTo {
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
   '/admin/ingresos': typeof AdminIngresosRoute
+  '/admin/precios': typeof AdminPreciosRoute
   '/api/public/hooks/send-reminders': typeof ApiPublicHooksSendRemindersRoute
 }
 export interface FileRoutesById {
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
   '/admin/ingresos': typeof AdminIngresosRoute
+  '/admin/precios': typeof AdminPreciosRoute
   '/api/public/hooks/send-reminders': typeof ApiPublicHooksSendRemindersRoute
 }
 export interface FileRouteTypes {
@@ -71,6 +80,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/terminos'
     | '/admin/ingresos'
+    | '/admin/precios'
     | '/api/public/hooks/send-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/terminos'
     | '/admin/ingresos'
+    | '/admin/precios'
     | '/api/public/hooks/send-reminders'
   id:
     | '__root__'
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/terminos'
     | '/admin/ingresos'
+    | '/admin/precios'
     | '/api/public/hooks/send-reminders'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/precios': {
+      id: '/admin/precios'
+      path: '/precios'
+      fullPath: '/admin/precios'
+      preLoaderRoute: typeof AdminPreciosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/ingresos': {
       id: '/admin/ingresos'
       path: '/ingresos'
@@ -137,10 +156,12 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminIngresosRoute: typeof AdminIngresosRoute
+  AdminPreciosRoute: typeof AdminPreciosRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminIngresosRoute: AdminIngresosRoute,
+  AdminPreciosRoute: AdminPreciosRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -154,3 +175,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
