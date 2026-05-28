@@ -174,6 +174,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       telefono: telefono.trim(),
       email: email.trim() || null,
       observaciones: observaciones.trim() || null,
+      clienteId: clienteId,
       servicios: selected,
       fecha: fechaIso,
       hora,
