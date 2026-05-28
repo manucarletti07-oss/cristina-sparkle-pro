@@ -493,19 +493,45 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
 }
 
 function BonosPanel({ bonos }: { bonos: Bono[] }) {
+  const [selectedCli, setSelectedCli] = useState<string>("__todos");
+  const clientes = useMemo(() => {
+    const map = new Map<string, { id: string; label: string }>();
+    for (const b of bonos) {
+      const label = [b.cliente?.nombre, b.cliente?.apellido_1].filter(Boolean).join(" ") || b.clienteId.slice(0, 8);
+      if (!map.has(b.clienteId)) map.set(b.clienteId, { id: b.clienteId, label });
+    }
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [bonos]);
+  const filtered = useMemo(
+    () => (selectedCli === "__todos" ? bonos : bonos.filter((b) => b.clienteId === selectedCli)),
+    [bonos, selectedCli]
+  );
   return (
     <section className="mt-12">
       <h3 className="font-display text-2xl text-background mb-4 flex items-center gap-2">
         <Gift className="size-5 text-primary" /> Bonos comprados
         <span className="text-xs uppercase tracking-[0.2em] text-primary/70">({bonos.length})</span>
       </h3>
+      <div className="mb-5 max-w-sm">
+        <Select value={selectedCli} onValueChange={setSelectedCli}>
+          <SelectTrigger className="h-11 border-primary/40 bg-background/5 text-background">
+            <SelectValue placeholder="Filtrar por cliente" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__todos">Todos los clientes ({clientes.length})</SelectItem>
+            {clientes.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       {bonos.length === 0 ? (
         <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
           <p className="text-sm text-background/60">No hay bonos para esta búsqueda.</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {bonos.map((b) => {
+          {filtered.map((b) => {
             const usadas = b.totalSesiones - b.sesionesRestantes;
             const cliente = b.cliente;
             return (
