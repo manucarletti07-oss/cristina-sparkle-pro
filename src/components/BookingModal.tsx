@@ -19,6 +19,7 @@ import {
   PROFESIONALES,
   saveCita,
   getBonoActivoByTelefono,
+  getServicios,
   type Bono,
   type Profesional,
 } from "@/lib/storage";
@@ -55,8 +56,14 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
   const [ocupadas, setOcupadas] = useState<Map<string, Set<Profesional>>>(new Map());
   const [bonoActivo, setBonoActivo] = useState<Bono | null>(null);
   const [usarBono, setUsarBono] = useState(false);
+  const [serviciosDb, setServiciosDb] = useState<Treatment[]>([]);
 
-  const data = cat ? SERVICIOS[cat] : null;
+  const data = cat ? {
+    titulo: SERVICIOS[cat].titulo,
+    treatments: serviciosDb.filter((s) => (s as Treatment & { categoria?: string }).categoria === cat).length
+      ? serviciosDb.filter((s) => (s as Treatment & { categoria?: string }).categoria === cat)
+      : SERVICIOS[cat].treatments,
+  } : null;
   const fixedTreatment = preselectedTreatment ?? null;
 
   useEffect(() => {
@@ -78,6 +85,9 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
         setCat(category ?? null);
         setSelected([]);
       }
+      getServicios().then((items) => {
+        setServiciosDb(items.map((s) => ({ nombre: s.nombre, precio: s.precio, categoria: s.categoria } as Treatment & { categoria: string })));
+      });
     }
   }, [open, category, preselectedTreatment]);
 
