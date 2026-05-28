@@ -189,11 +189,12 @@ function Admin() {
       .filter((c) => (filter === "todas" ? true : c.estado === filter))
       .filter((c) => {
         if (!n) return true;
+        // Coincidencia por inicio en nombre / apellidos. Teléfono = contiene.
         return (
-          c.nombre.toLowerCase().includes(n) ||
-          c.telefono.toLowerCase().includes(n) ||
-          c.apellido_1?.toLowerCase().includes(n) ||
-          c.apellido_2?.toLowerCase().includes(n)
+          c.nombre.toLowerCase().startsWith(n) ||
+          (c.apellido_1?.toLowerCase().startsWith(n) ?? false) ||
+          (c.apellido_2?.toLowerCase().startsWith(n) ?? false) ||
+          c.telefono.toLowerCase().includes(n)
         );
       });
   }, [citas, citasDelRango, filter, nameQuery, profesionalQuery]);
@@ -203,9 +204,11 @@ function Admin() {
     return bonos.filter((b) => {
       if (!n) return true;
       const cliente = b.cliente;
-      return [cliente?.nombre, cliente?.alias, cliente?.telefono, cliente?.email, b.clienteId]
+      const startsFields = [cliente?.nombre, cliente?.apellido_1, cliente?.apellido_2, cliente?.alias]
         .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(n));
+        .some((v) => String(v).toLowerCase().startsWith(n));
+      const phoneMatch = (cliente?.telefono ?? "").toLowerCase().includes(n);
+      return startsFields || phoneMatch;
     });
   }, [bonos, nameQuery]);
 
