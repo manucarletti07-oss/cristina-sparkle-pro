@@ -16,17 +16,13 @@ export function ClienteSearchDropdown() {
 
   useEffect(() => {
     const term = q.trim();
-    if (term.length < 2) {
-      setResults([]);
-      return;
-    }
     setLoading(true);
     const t = setTimeout(async () => {
       const r = await searchClientesConHistorial(term, 12);
       setResults(r);
       setLoading(false);
       setOpen(true);
-    }, 200);
+    }, term.length === 0 ? 0 : 180);
     return () => clearTimeout(t);
   }, [q]);
 
@@ -50,7 +46,7 @@ export function ClienteSearchDropdown() {
       <Input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        onFocus={() => results.length > 0 && setOpen(true)}
+        onFocus={() => setOpen(true)}
         placeholder="Buscar cliente por nombre, apellido o teléfono…"
         className="h-12 pl-11 pr-10 bg-background/5 border-primary/30 text-background placeholder:text-background/40 focus-visible:ring-primary"
       />
@@ -69,7 +65,7 @@ export function ClienteSearchDropdown() {
           {loading && (
             <div className="p-4 text-xs text-background/60">Buscando…</div>
           )}
-          {!loading && results.length === 0 && q.trim().length >= 2 && (
+          {!loading && results.length === 0 && (
             <div className="p-4 text-xs text-background/60">Sin resultados.</div>
           )}
           {!loading && results.map((c) => {
