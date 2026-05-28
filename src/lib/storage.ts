@@ -57,6 +57,9 @@ export type Cita = {
   estado: "pendiente" | "realizada";
   bonoId?: string | null;
   createdAt: string;
+  cobrada?: boolean;
+  precio_cobrado?: number | null;
+  fecha_cobro?: string | null;
 };
 
 type ClienteJoin = {
@@ -84,6 +87,9 @@ type Row = {
   estado: "pendiente" | "realizada";
   bono_id: string | null;
   created_at: string;
+  cobrada?: boolean;
+  precio_cobrado?: number | null;
+  fecha_cobro?: string | null;
   clientes: ClienteJoin | null;
 };
 
@@ -104,6 +110,9 @@ const toCita = (r: Row): Cita => ({
   estado: r.estado,
   bonoId: r.bono_id,
   createdAt: r.created_at,
+  cobrada: r.cobrada ?? false,
+  precio_cobrado: r.precio_cobrado ?? null,
+  fecha_cobro: r.fecha_cobro ?? null,
 });
 
 export async function getCitas(): Promise<Cita[]> {
@@ -348,4 +357,181 @@ export async function getBonosPanel(): Promise<Bono[]> {
     return [];
   }
   return (data as BonoRow[]).map(toBono);
+}
+
+// ====== SERVICIOS / PRECIOS ======
+export type Servicio = {
+  id: string;
+  nombre: string;
+  categoria: string;
+  precio: number;
+  duracion_min: number;
+  requiere_maquina: boolean;
+  sala_requerida: number | null;
+  activo: boolean;
+};
+
+export async function getServicios(): Promise<Servicio[]> {
+  const { data, error } = await supabase
+    .from("servicios")
+    .select("id,nombre,categoria,precio,duracion_min,requiere_maquina,sala_requerida,activo")
+    .order("categoria")
+    .order("nombre");
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return (data ?? []) as Servicio[];
+}
+
+export async function updateServicioPrecio(id: string, precio: number) {
+  const { error } = await supabase.from("servicios").update({ precio }).eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
+// ====== CATÁLOGO DE BONOS ======
+export type BonoCatalogo = {
+  id: string;
+  nombre: string;
+  sesiones: number;
+  precio: number;
+};
+
+export async function getBonosCatalogo(): Promise<BonoCatalogo[]> {
+  const { data, error } = await supabase
+    .from("bonos_catalogo")
+    .select("id,nombre,sesiones,precio")
+    .eq("activo", true)
+    .order("nombre");
+  if (error) return [];
+  return (data ?? []) as BonoCatalogo[];
+}
+
+export async function comprarBonoCatalogo(input: {
+  catalogoId: string;
+  nombre: string;
+  telefono: string;
+  email?: string | null;
+}): Promise<{ ok: true; bono: Bono } | { ok: false; error: string }> {
+  const clienteId = await ensureClienteByTelefono(input.nombre, input.telefono, input.email);
+  if (!clienteId) return { ok: false, error: "Indica nombre y teléfono" };
+  const { data: cat, error: catErr } = await supabase
+    .from("bonos_catalogo")
+    .select("id,nombre,sesiones,precio")
+    .eq("id", input.catalogoId)
+    .single();
+  if (catErr || !cat) return { ok: false, error: "Bono no encontrado" };
+  const { data, error } = await supabase
+    .from("bonos")
+    .insert({
+      cliente_id: clienteId,
+      catalogo_id: cat.id,
+      nombre: cat.nombre,
+      total_sesiones: cat.sesiones,
+      sesiones_restantes: cat.sesiones,
+      precio: cat.precio,
+    })
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, bono: toBono(data as BonoRow) };
+}
+
+// ====== CLIENTE FICHA ======
+export async function getClienteById(id: string): Promise<Cliente | null> {
+  const { data } = await supabase
+    .from("clientes")
+    .select("id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones")
+    .eq("id", id)
+    .maybeSingle();
+  return (data as Cliente) ?? null;
+}
+
+export async function getCitasByCliente(clienteId: string): Promise<Cita[]> {
+  const { data, error } = await supabase
+    .from("citas")
+    .select("*, clientes(nombre, apellido_1, apellido_2, telefono, email, alias, observaciones)")
+    .eq("cliente_id", clienteId)
+    .order("fecha", { ascending: false })
+    .order("hora", { ascending: false });
+  if (error) return [];
+  return (data as Row[]).map(toCita);
+}
+
+export async function updateClienteObservaciones(id: string, observaciones: string) {
+  const { error } = await supabase.from("clientes").update({ observaciones }).eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
+// ====== COBROS / INGRESOS ======
+export async function marcarCitaCobrada(id: string, precio: number) {
+  const { error } = await supabase
+    .from("citas")
+    .update({ cobrada: true, precio_cobrado: precio, fecha_cobro: new Date().toISOString(), estado: "realizada" })
+    .eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
+export async function getCitasCobradas(fecha?: string): Promise<Cita[]> {
+  let q = supabase
+    .from("citas")
+    .select("*, clientes(nombre, apellido_1, apellido_2, telefono, email, alias, observaciones)")
+    .eq("cobrada", true)
+    .order("fecha", { ascending: false })
+    .order("hora", { ascending: false });
+  if (fecha) q = q.eq("fecha", fecha);
+  const { data, error } = await q;
+  if (error) return [];
+  return (data as Row[]).map(toCita);
+}
+
+// ====== FOTOS CLIENTE ======
+export type FotoCliente = {
+  id: string;
+  cliente_id: string;
+  storage_path: string;
+  descripcion: string | null;
+  created_at: string;
+  url?: string;
+};
+
+export async function getFotosCliente(clienteId: string): Promise<FotoCliente[]> {
+  const { data, error } = await supabase
+    .from("cliente_fotos")
+    .select("id,cliente_id,storage_path,descripcion,created_at")
+    .eq("cliente_id", clienteId)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  const fotos = data as FotoCliente[];
+  const withUrls = await Promise.all(
+    fotos.map(async (f) => {
+      const { data: signed } = await supabase.storage
+        .from("clientes-fotos")
+        .createSignedUrl(f.storage_path, 60 * 60);
+      return { ...f, url: signed?.signedUrl };
+    })
+  );
+  return withUrls;
+}
+
+export async function uploadFotoCliente(clienteId: string, file: File, descripcion?: string) {
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${clienteId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from("clientes-fotos")
+    .upload(path, file, { contentType: file.type });
+  if (upErr) return { ok: false as const, error: upErr.message };
+  const { error: insErr } = await supabase
+    .from("cliente_fotos")
+    .insert({ cliente_id: clienteId, storage_path: path, descripcion: descripcion ?? null });
+  if (insErr) return { ok: false as const, error: insErr.message };
+  return { ok: true as const };
+}
+
+export async function deleteFotoCliente(foto: FotoCliente) {
+  await supabase.storage.from("clientes-fotos").remove([foto.storage_path]);
+  await supabase.from("cliente_fotos").delete().eq("id", foto.id);
 }
