@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Sparkles, CalendarPlus } from "lucide-react";
 import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
+import { getServicios } from "@/lib/storage";
 
 const DESCRIPCIONES: Record<ServiceCategory, string> = {
   facial: "Tratamientos faciales avanzados para revitalizar, limpiar y rejuvenecer tu piel. Cada protocolo se diseña a medida según las necesidades de tu rostro.",
@@ -19,7 +21,12 @@ type Props = {
 };
 
 export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props) {
-  const data = category ? SERVICIOS[category] : null;
+  const [serviciosDb, setServiciosDb] = useState<(Treatment & { categoria: string })[]>([]);
+  useEffect(() => {
+    if (open) getServicios().then((items) => setServiciosDb(items.map((s) => ({ nombre: s.nombre, precio: s.precio, categoria: s.categoria }))));
+  }, [open]);
+  const dbTreatments = category ? serviciosDb.filter((s) => s.categoria === category) : [];
+  const data = category ? { ...SERVICIOS[category], treatments: dbTreatments.length ? dbTreatments : SERVICIOS[category].treatments } : null;
   if (!data || !category) return null;
 
   return (

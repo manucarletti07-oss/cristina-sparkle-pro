@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, Outlet, useLocation } from "@tanstack/react-router";
 import {
   format,
   parseISO,
@@ -83,6 +83,7 @@ function whatsappUrl(cita: Cita) {
 function Admin() {
   const { isAuth, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [citas, setCitas] = useState<Cita[]>([]);
   const [bonos, setBonos] = useState<Bono[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
@@ -248,6 +249,8 @@ function Admin() {
   const getBonoForCita = (c: Cita) => (c.clienteId ? bonoActivoByCliente.get(c.clienteId) ?? null : null);
 
   if (!ready || authLoading || !isAuth) return null;
+
+  if (location.pathname !== "/admin") return <Outlet />;
 
   const cristinaCitas = visible.filter((c) => c.profesional === "cristina");
   const jennyCitas = visible.filter((c) => c.profesional === "jenny");

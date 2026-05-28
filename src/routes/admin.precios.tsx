@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ArrowLeft, Plus, Trash2, Pencil, X, Check, Lock } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Pencil, X, Check, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PrivateAccessGate } from "@/components/PrivateAccessGate";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,11 +23,15 @@ import {
   updateServicio,
   createServicio,
   deleteServicio,
+  getBonosCatalogo,
+  updateBonoCatalogo,
+  createBonoCatalogo,
+  deleteBonoCatalogo,
   type Servicio,
+  type BonoCatalogo,
 } from "@/lib/storage";
 
-const PRECIOS_PASSWORD = "ingresos123";
-const SESSION_KEY = "ingresos_unlocked";
+const SESSION_KEY = "private_precios_unlocked";
 
 export const Route = createFileRoute("/admin/precios")({
   head: () => ({
@@ -42,9 +47,10 @@ function Precios() {
   const { isAuth, loading } = useAuth();
   const navigate = useNavigate();
   const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [bonos, setBonos] = useState<BonoCatalogo[]>([]);
   const [unlocked, setUnlocked] = useState(false);
-  const [pwd, setPwd] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingBonoId, setEditingBonoId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string }>({
     nombre: "",
     categoria: "",
@@ -55,18 +61,26 @@ function Precios() {
     categoria: "",
     precio: "",
   });
+  const [draftBono, setDraftBono] = useState<{ nombre: string; sesiones: string; precio: string }>({
+    nombre: "",
+    sesiones: "",
+    precio: "",
+  });
+  const [nuevoBono, setNuevoBono] = useState<{ nombre: string; sesiones: string; precio: string }>({
+    nombre: "",
+    sesiones: "",
+    precio: "",
+  });
 
   useEffect(() => {
     if (loading) return;
     if (!isAuth) { navigate({ to: "/" }); return; }
-    if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1") {
-      setUnlocked(true);
-    }
   }, [loading, isAuth, navigate]);
 
   useEffect(() => {
     if (!unlocked) return;
     getServicios().then(setServicios);
+    getBonosCatalogo().then(setBonos);
   }, [unlocked]);
 
   const startEdit = (s: Servicio) => {
@@ -120,51 +134,53 @@ function Precios() {
     setNuevo({ nombre: "", categoria: "", precio: "" });
   };
 
+  const startEditBono = (b: BonoCatalogo) => {
+    setEditingBonoId(b.id);
+    setDraftBono({ nombre: b.nombre, sesiones: String(b.sesiones), precio: String(b.precio) });
+  };
+
+  const cancelEditBono = () => {
+    setEditingBonoId(null);
+    setDraftBono({ nombre: "", sesiones: "", precio: "" });
+  };
+
+  const saveBono = async (b: BonoCatalogo) => {
+    const sesiones = Number(draftBono.sesiones);
+    const precio = Number(draftBono.precio);
+    if (!draftBono.nombre.trim()) return toast.error("Nombre obligatorio");
+    if (!Number.isInteger(sesiones) || sesiones <= 0) return toast.error("Sesiones inválidas");
+    if (Number.isNaN(precio) || precio < 0) return toast.error("Precio inválido");
+    const res = await updateBonoCatalogo(b.id, { nombre: draftBono.nombre.trim(), sesiones, precio });
+    if (!res.ok) return toast.error(res.error);
+    toast.success("Bono actualizado");
+    setBonos((arr) => arr.map((x) => (x.id === b.id ? { ...x, nombre: draftBono.nombre.trim(), sesiones, precio } : x)));
+    cancelEditBono();
+  };
+
+  const createBono = async () => {
+    const sesiones = Number(nuevoBono.sesiones);
+    const precio = Number(nuevoBono.precio);
+    if (!nuevoBono.nombre.trim()) return toast.error("Nombre obligatorio");
+    if (!Number.isInteger(sesiones) || sesiones <= 0) return toast.error("Sesiones inválidas");
+    if (Number.isNaN(precio) || precio < 0) return toast.error("Precio inválido");
+    const res = await createBonoCatalogo({ nombre: nuevoBono.nombre.trim(), sesiones, precio });
+    if (!res.ok) return toast.error(res.error);
+    toast.success("Bono creado");
+    setBonos((arr) => [...arr, res.bono]);
+    setNuevoBono({ nombre: "", sesiones: "", precio: "" });
+  };
+
+  const removeBono = async (b: BonoCatalogo) => {
+    const res = await deleteBonoCatalogo(b.id);
+    if (!res.ok) return toast.error(res.error);
+    toast.success(`Bono eliminado: ${b.nombre}`);
+    setBonos((arr) => arr.filter((x) => x.id !== b.id));
+  };
+
   if (loading || !isAuth) return null;
 
   if (!unlocked) {
-    return (
-      <div className="min-h-screen bg-foreground text-background flex items-center justify-center p-6">
-        <div className="glass-dark rounded-2xl p-8 w-full max-w-md space-y-6">
-          <div className="text-center space-y-2">
-            <div className="mx-auto size-14 rounded-full bg-primary/15 flex items-center justify-center">
-              <Lock className="size-6 text-primary" />
-            </div>
-            <h1 className="font-display text-2xl">Precios · Acceso privado</h1>
-            <p className="text-sm text-background/60">Introduce la contraseña para continuar.</p>
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (pwd === PRECIOS_PASSWORD) {
-                sessionStorage.setItem(SESSION_KEY, "1");
-                setUnlocked(true);
-              } else {
-                toast.error("Contraseña incorrecta");
-              }
-            }}
-            className="space-y-3"
-          >
-            <div className="space-y-2">
-              <Label className="text-background/80">Contraseña</Label>
-              <Input
-                type="password"
-                value={pwd}
-                onChange={(e) => setPwd(e.target.value)}
-                className="bg-background/5 border-primary/30 text-background"
-                autoFocus
-              />
-            </div>
-            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              Entrar
-            </Button>
-            <Button asChild type="button" variant="outline" className="w-full border-primary/30 text-primary bg-transparent">
-              <Link to="/admin"><ArrowLeft className="size-4" /> Volver al panel</Link>
-            </Button>
-          </form>
-        </div>
-      </div>
-    );
+    return <PrivateAccessGate title="Precios · Acceso privado" sessionKey={SESSION_KEY} onUnlocked={() => setUnlocked(true)} />;
   }
 
   const byCat = servicios.reduce<Record<string, Servicio[]>>((acc, s) => {
@@ -184,6 +200,36 @@ function Precios() {
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+        <section className="glass-dark rounded-2xl p-5 space-y-4">
+          <h2 className="font-display text-xl flex items-center gap-2">
+            <Gift className="size-5 text-primary" /> Bonos
+          </h2>
+          <div className="grid sm:grid-cols-[1fr_120px_140px_auto] gap-3 items-end">
+            <Input value={nuevoBono.nombre} onChange={(e) => setNuevoBono((p) => ({ ...p, nombre: e.target.value }))} placeholder="Nombre del bono" className="bg-background/5 border-primary/30 text-background" />
+            <Input type="number" min={1} value={nuevoBono.sesiones} onChange={(e) => setNuevoBono((p) => ({ ...p, sesiones: e.target.value }))} placeholder="Sesiones" className="bg-background/5 border-primary/30 text-background" />
+            <Input type="number" min={0} value={nuevoBono.precio} onChange={(e) => setNuevoBono((p) => ({ ...p, precio: e.target.value }))} placeholder="Precio" className="bg-background/5 border-primary/30 text-background" />
+            <Button onClick={createBono} className="bg-primary text-primary-foreground hover:bg-primary/90 h-10"><Plus className="size-4" /> Crear</Button>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-primary/10">
+            <table className="w-full text-sm">
+              <thead className="bg-primary/10 text-primary text-[11px] uppercase tracking-[0.2em]"><tr><th className="text-left p-3">Bono</th><th className="text-left p-3">Sesiones</th><th className="text-left p-3">Precio</th><th className="text-right p-3"></th></tr></thead>
+              <tbody>
+                {bonos.map((b) => {
+                  const isEditing = editingBonoId === b.id;
+                  return (
+                    <tr key={b.id} className="border-t border-primary/10">
+                      <td className="p-3">{isEditing ? <Input value={draftBono.nombre} onChange={(e) => setDraftBono((p) => ({ ...p, nombre: e.target.value }))} className="bg-background/5 border-primary/30 text-background h-9" /> : b.nombre}</td>
+                      <td className="p-3">{isEditing ? <Input type="number" min={1} value={draftBono.sesiones} onChange={(e) => setDraftBono((p) => ({ ...p, sesiones: e.target.value }))} className="bg-background/5 border-primary/30 text-background h-9" /> : b.sesiones}</td>
+                      <td className="p-3">{isEditing ? <Input type="number" min={0} value={draftBono.precio} onChange={(e) => setDraftBono((p) => ({ ...p, precio: e.target.value }))} className="bg-background/5 border-primary/30 text-background h-9" /> : `${b.precio}€`}</td>
+                      <td className="p-3 text-right"><div className="flex justify-end gap-2">{isEditing ? <><Button size="sm" onClick={() => saveBono(b)} className="bg-primary text-primary-foreground hover:bg-primary/90"><Check className="size-4" /> Guardar</Button><Button size="sm" variant="outline" onClick={cancelEditBono} className="border-primary/30 text-primary bg-transparent"><X className="size-4" /></Button></> : <><Button size="sm" variant="outline" onClick={() => startEditBono(b)} className="border-primary/30 text-primary bg-transparent"><Pencil className="size-4" /> Modificar</Button><Button size="sm" variant="outline" onClick={() => removeBono(b)} className="border-destructive/40 text-destructive bg-transparent hover:bg-destructive hover:text-destructive-foreground"><Trash2 className="size-4" /></Button></>}</div></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {/* NUEVO SERVICIO */}
         <section className="glass-dark rounded-2xl p-5 space-y-4">
           <h2 className="font-display text-xl flex items-center gap-2">
