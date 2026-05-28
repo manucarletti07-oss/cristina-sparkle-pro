@@ -604,6 +604,21 @@ export async function updateClienteObservaciones(id: string, observaciones: stri
   return { ok: true as const };
 }
 
+export async function updateCliente(
+  id: string,
+  patch: Partial<Pick<Cliente, "nombre" | "apellido_1" | "apellido_2" | "telefono" | "email" | "alias" | "observaciones">>
+) {
+  const { error } = await supabase.from("clientes").update(patch).eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
+export async function deleteCliente(id: string) {
+  const { error } = await supabase.from("clientes").delete().eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
 // ====== COBROS / INGRESOS ======
 export async function marcarCitaCobrada(id: string, precio: number) {
   const { error } = await supabase
