@@ -134,51 +134,53 @@ function Precios() {
     setNuevo({ nombre: "", categoria: "", precio: "" });
   };
 
+  const startEditBono = (b: BonoCatalogo) => {
+    setEditingBonoId(b.id);
+    setDraftBono({ nombre: b.nombre, sesiones: String(b.sesiones), precio: String(b.precio) });
+  };
+
+  const cancelEditBono = () => {
+    setEditingBonoId(null);
+    setDraftBono({ nombre: "", sesiones: "", precio: "" });
+  };
+
+  const saveBono = async (b: BonoCatalogo) => {
+    const sesiones = Number(draftBono.sesiones);
+    const precio = Number(draftBono.precio);
+    if (!draftBono.nombre.trim()) return toast.error("Nombre obligatorio");
+    if (!Number.isInteger(sesiones) || sesiones <= 0) return toast.error("Sesiones inválidas");
+    if (Number.isNaN(precio) || precio < 0) return toast.error("Precio inválido");
+    const res = await updateBonoCatalogo(b.id, { nombre: draftBono.nombre.trim(), sesiones, precio });
+    if (!res.ok) return toast.error(res.error);
+    toast.success("Bono actualizado");
+    setBonos((arr) => arr.map((x) => (x.id === b.id ? { ...x, nombre: draftBono.nombre.trim(), sesiones, precio } : x)));
+    cancelEditBono();
+  };
+
+  const createBono = async () => {
+    const sesiones = Number(nuevoBono.sesiones);
+    const precio = Number(nuevoBono.precio);
+    if (!nuevoBono.nombre.trim()) return toast.error("Nombre obligatorio");
+    if (!Number.isInteger(sesiones) || sesiones <= 0) return toast.error("Sesiones inválidas");
+    if (Number.isNaN(precio) || precio < 0) return toast.error("Precio inválido");
+    const res = await createBonoCatalogo({ nombre: nuevoBono.nombre.trim(), sesiones, precio });
+    if (!res.ok) return toast.error(res.error);
+    toast.success("Bono creado");
+    setBonos((arr) => [...arr, res.bono]);
+    setNuevoBono({ nombre: "", sesiones: "", precio: "" });
+  };
+
+  const removeBono = async (b: BonoCatalogo) => {
+    const res = await deleteBonoCatalogo(b.id);
+    if (!res.ok) return toast.error(res.error);
+    toast.success(`Bono eliminado: ${b.nombre}`);
+    setBonos((arr) => arr.filter((x) => x.id !== b.id));
+  };
+
   if (loading || !isAuth) return null;
 
   if (!unlocked) {
-    return (
-      <div className="min-h-screen bg-foreground text-background flex items-center justify-center p-6">
-        <div className="glass-dark rounded-2xl p-8 w-full max-w-md space-y-6">
-          <div className="text-center space-y-2">
-            <div className="mx-auto size-14 rounded-full bg-primary/15 flex items-center justify-center">
-              <Lock className="size-6 text-primary" />
-            </div>
-            <h1 className="font-display text-2xl">Precios · Acceso privado</h1>
-            <p className="text-sm text-background/60">Introduce la contraseña para continuar.</p>
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (pwd === PRECIOS_PASSWORD) {
-                sessionStorage.setItem(SESSION_KEY, "1");
-                setUnlocked(true);
-              } else {
-                toast.error("Contraseña incorrecta");
-              }
-            }}
-            className="space-y-3"
-          >
-            <div className="space-y-2">
-              <Label className="text-background/80">Contraseña</Label>
-              <Input
-                type="password"
-                value={pwd}
-                onChange={(e) => setPwd(e.target.value)}
-                className="bg-background/5 border-primary/30 text-background"
-                autoFocus
-              />
-            </div>
-            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              Entrar
-            </Button>
-            <Button asChild type="button" variant="outline" className="w-full border-primary/30 text-primary bg-transparent">
-              <Link to="/admin"><ArrowLeft className="size-4" /> Volver al panel</Link>
-            </Button>
-          </form>
-        </div>
-      </div>
-    );
+    return <PrivateAccessGate title="Precios · Acceso privado" sessionKey={SESSION_KEY} onUnlocked={() => setUnlocked(true)} />;
   }
 
   const byCat = servicios.reduce<Record<string, Servicio[]>>((acc, s) => {
