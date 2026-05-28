@@ -3,11 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Award, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { BookingModal } from "@/components/BookingModal";
 import { ServiceInfoModal } from "@/components/ServiceInfoModal";
-import { BuyBonoModal } from "@/components/BuyBonoModal";
 import { Button } from "@/components/ui/button";
-import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
+import { SERVICIOS, type ServiceCategory } from "@/lib/config";
 import { getBonosCatalogo, type BonoCatalogo } from "@/lib/storage";
 import heroImg from "@/assets/momento.jpg";
 import facialImg from "@/assets/facial-trabajo.jpg";
@@ -41,11 +39,8 @@ const SERVICE_CARDS: { key: ServiceCategory; img: string; phrase: string }[] = [
 
 
 function Index() {
-  const [bookingOpen, setBookingOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
-  const [preselected, setPreselected] = useState<(Treatment & { categoria: ServiceCategory }) | null>(null);
-  const [buyBonoOpen, setBuyBonoOpen] = useState(false);
   const [bonoPrincipal, setBonoPrincipal] = useState<BonoCatalogo | null>(null);
 
   useEffect(() => {
@@ -57,19 +52,9 @@ function Index() {
     setInfoOpen(true);
   };
 
-  const openGeneric = () => {
-    setPreselected(null);
-    setBookingOpen(true);
-  };
-
-  const openBookingFor = (t: Treatment & { categoria: ServiceCategory }) => {
-    setPreselected(t);
-    setBookingOpen(true);
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onBookClick={openGeneric} />
+      <Navbar onBookClick={() => {}} />
 
       {/* HERO */}
       <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -171,12 +156,9 @@ function Index() {
                 <li>Válido para cualquier tratamiento</li>
                 <li>Vinculado a tu teléfono</li>
               </ul>
-              <Button
-                onClick={() => setBuyBonoOpen(true)}
-                className="bg-foreground text-background hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.25em] rounded-full px-8"
-              >
-                Comprar bono
-              </Button>
+              <p className="text-xs text-muted-foreground italic">
+                Consulta en el centro para adquirir tu bono.
+              </p>
             </div>
           </div>
         </div>
@@ -253,19 +235,11 @@ function Index() {
 
       <Footer />
 
-      <BookingModal
-        open={bookingOpen}
-        onOpenChange={setBookingOpen}
-        category={null}
-        preselectedTreatment={preselected}
-      />
       <ServiceInfoModal
         open={infoOpen}
         onOpenChange={setInfoOpen}
         category={infoCategory}
-        onBook={openBookingFor}
       />
-      <BuyBonoModal open={buyBonoOpen} onOpenChange={setBuyBonoOpen} />
     </div>
   );
 }

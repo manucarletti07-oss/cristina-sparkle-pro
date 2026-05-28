@@ -17,7 +17,7 @@ type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   category: ServiceCategory | null;
-  onBook: (treatment: Treatment & { categoria: ServiceCategory }) => void;
+  onBook?: (treatment: Treatment & { categoria: ServiceCategory }) => void;
 };
 
 export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props) {
@@ -57,16 +57,18 @@ export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props
                     {t.desde ? "desde " : ""}{t.precio}€
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    onOpenChange(false);
-                    onBook({ ...t, categoria: category });
-                  }}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 text-[10px] uppercase tracking-[0.2em] shrink-0"
-                >
-                  <CalendarPlus className="size-3.5" /> Reservar
-                </Button>
+                {onBook && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      onOpenChange(false);
+                      onBook({ ...t, categoria: category });
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 text-[10px] uppercase tracking-[0.2em] shrink-0"
+                  >
+                    <CalendarPlus className="size-3.5" /> Reservar
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
