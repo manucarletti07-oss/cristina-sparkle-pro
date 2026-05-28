@@ -229,7 +229,19 @@ export type Cliente = {
 
 export async function searchClientes(q: string, limit = 8): Promise<Cliente[]> {
   const term = q.trim();
-  if (!term) return [];
+  if (!term) {
+    // Sin término: devuelve los primeros clientes ordenados alfabéticamente
+    const { data, error } = await supabase
+      .from("clientes")
+      .select("id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones")
+      .order("nombre")
+      .limit(limit);
+    if (error) {
+      console.error(error);
+      return [];
+    }
+    return (data as Cliente[]) ?? [];
+  }
   // Coincidencia desde el INICIO del texto (case insensitive) en nombre/apellidos/alias.
   // El teléfono se busca por contiene (para encontrar por dígitos sueltos).
   // Sanitizamos el término para evitar romper el filtro PostgREST (sin comas ni paréntesis).

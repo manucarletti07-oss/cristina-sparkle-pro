@@ -20,6 +20,8 @@ import {
   saveCita,
   getBonoActivoByTelefono,
   getServicios,
+  searchClientes,
+  type Cliente,
   type Bono,
   type Profesional,
 } from "@/lib/storage";
@@ -57,6 +59,9 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
   const [bonoActivo, setBonoActivo] = useState<Bono | null>(null);
   const [usarBono, setUsarBono] = useState(false);
   const [serviciosDb, setServiciosDb] = useState<Treatment[]>([]);
+  const [clienteSugs, setClienteSugs] = useState<Cliente[]>([]);
+  const [showSugs, setShowSugs] = useState(false);
+  const [clienteId, setClienteId] = useState<string | null>(null);
 
   const data = cat ? {
     titulo: SERVICIOS[cat].titulo,
@@ -78,6 +83,9 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       setProfesional("cristina");
       setBonoActivo(null);
       setUsarBono(false);
+      setClienteSugs([]);
+      setShowSugs(false);
+      setClienteId(null);
       if (preselectedTreatment) {
         setCat(preselectedTreatment.categoria);
         setSelected([preselectedTreatment.nombre]);
@@ -90,6 +98,25 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       });
     }
   }, [open, category, preselectedTreatment]);
+
+  // Autocompletar clientes mientras se escribe el nombre (prefijo)
+  useEffect(() => {
+    if (!showSugs) return;
+    const t = setTimeout(async () => {
+      const list = await searchClientes(nombre.trim(), 8);
+      setClienteSugs(list);
+    }, nombre.trim().length === 0 ? 0 : 180);
+    return () => clearTimeout(t);
+  }, [nombre, showSugs]);
+
+  const pickCliente = (c: Cliente) => {
+    const full = [c.nombre, c.apellido_1, c.apellido_2].filter(Boolean).join(" ");
+    setNombre(full);
+    if (c.telefono) setTelefono(c.telefono);
+    if (c.email) setEmail(c.email);
+    setClienteId(c.id);
+    setShowSugs(false);
+  };
 
   const total = useMemo(
     () =>
@@ -147,6 +174,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       telefono: telefono.trim(),
       email: email.trim() || null,
       observaciones: observaciones.trim() || null,
+      clienteId: clienteId,
       servicios: selected,
       fecha: fechaIso,
       hora,
@@ -230,7 +258,39 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Nombre</Label>
-                  <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" />
+                  <div className="relative">
+                    <Input
+                      value={nombre}
+                      onChange={(e) => { setNombre(e.target.value); setShowSugs(true); setClienteId(null); }}
+                      onFocus={() => setShowSugs(true)}
+                      onBlur={() => setTimeout(() => setShowSugs(false), 150)}
+                      placeholder="Tu nombre"
+                      autoComplete="off"
+                    />
+                    {showSugs && clienteSugs.length > 0 && (
+                      <div className="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-auto rounded-lg border border-primary/30 bg-popover shadow-xl">
+                        {clienteSugs.map((c) => {
+                          const full = [c.nombre, c.apellido_1, c.apellido_2].filter(Boolean).join(" ");
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onMouseDown={(e) => { e.preventDefault(); pickCliente(c); }}
+                              className="w-full text-left px-3 py-2 hover:bg-primary/10 border-b border-primary/10 last:border-0"
+                            >
+                              <span className="block text-sm text-foreground truncate">
+                                {full || "Sin nombre"}
+                                {c.alias && <span className="ml-2 text-[10px] uppercase tracking-[0.15em] text-primary">({c.alias})</span>}
+                              </span>
+                              <span className="block text-[11px] text-muted-foreground truncate">
+                                {c.telefono ?? "Sin teléfono"}{c.email ? ` · ${c.email}` : ""}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Teléfono</Label>

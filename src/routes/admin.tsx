@@ -220,8 +220,10 @@ function Admin() {
   };
 
   const markDone = async (c: Cita) => {
-    await updateCita(c.id, { estado: "realizada" });
-    toast.success("Cita marcada como realizada");
+    // Marcar como realizada implica registrar cobro (entra en Ingresos)
+    const res = await marcarCitaCobrada(c.id, c.total);
+    if (!res.ok) return toast.error(res.error);
+    toast.success(`Cita realizada · ${c.total}€ registrados en ingresos`);
   };
 
   const remove = async (c: Cita) => {
