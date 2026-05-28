@@ -43,6 +43,7 @@ import { deleteCita, getBonosPanel, getCitas, marcarCitaCobrada, PROFESIONALES, 
 import { supabase } from "@/integrations/supabase/client";
 import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
+import { ClienteSearchDropdown } from "@/components/ClienteSearchDropdown";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -313,16 +314,17 @@ function Admin() {
           </Button>
         </div>
 
-        {/* STATS */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {/* BUSCADOR DE FICHAS */}
+        <div className="mb-6">
+          <p className="text-[10px] uppercase tracking-[0.25em] text-primary mb-2">Buscar ficha de cliente</p>
+          <ClienteSearchDropdown />
+        </div>
+
+        {/* STATS (sin ingresos: ver en sección privada) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <StatCard label={dateQuery ? "Citas del día" : "Total citas"} value={String(stats.total)} icon={<CalendarIcon className="size-4" />} />
           <StatCard label="Por hacer" value={String(stats.pendientes)} icon={<Clock className="size-4" />} />
           <StatCard label="Realizadas" value={String(stats.realizadas)} icon={<CheckCircle2 className="size-4" />} />
-          <StatCard
-            label={dateQuery ? "Ingresos del día" : "Ingresos previstos"}
-            value={`${stats.previstos + stats.ingresos}€`}
-            icon={<Euro className="size-4" />}
-          />
         </div>
 
         {/* FILTERS */}
