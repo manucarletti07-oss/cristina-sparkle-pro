@@ -230,13 +230,23 @@ export type Cliente = {
 export async function searchClientes(q: string, limit = 8): Promise<Cliente[]> {
   const term = q.trim();
   if (!term) return [];
-  const { data, error } = await supabase
+  // Coincidencia desde el INICIO del texto (case insensitive) en nombre/apellidos/alias.
+  // El teléfono se busca por contiene (para encontrar por dígitos sueltos).
+  // Sanitizamos el término para evitar romper el filtro PostgREST (sin comas ni paréntesis).
+  const safe = term.replace(/[(),]/g, " ").trim();
+  if (!safe) return [];
+  const tokens = safe.split(/\s+/).slice(0, 3); // hasta 3 palabras (ej. "Maria Garcia Lopez")
+  let query = supabase
     .from("clientes")
-    .select("id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones")
-    .or(
-      `nombre.ilike.%${term}%,alias.ilike.%${term}%,telefono.ilike.%${term}%,apellido_1.ilike.%${term}%`
-    )
-    .limit(limit);
+    .select("id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones");
+  // Cada token debe empezar alguno de los campos de nombre o estar en el teléfono.
+  for (const t of tokens) {
+    const pat = `${t}%`;
+    query = query.or(
+      `nombre.ilike.${pat},apellido_1.ilike.${pat},apellido_2.ilike.${pat},alias.ilike.${pat},telefono.ilike.%${t}%`
+    );
+  }
+  const { data, error } = await query.order("nombre").limit(limit);
   if (error) {
     console.error(error);
     return [];

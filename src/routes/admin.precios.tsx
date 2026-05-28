@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ArrowLeft, Plus, Trash2, Pencil, X, Check } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Pencil, X, Check, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,9 @@ import {
   type Servicio,
 } from "@/lib/storage";
 
+const PRECIOS_PASSWORD = "ingresos123";
+const SESSION_KEY = "ingresos_unlocked";
+
 export const Route = createFileRoute("/admin/precios")({
   head: () => ({
     meta: [
@@ -39,6 +42,8 @@ function Precios() {
   const { isAuth, loading } = useAuth();
   const navigate = useNavigate();
   const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [unlocked, setUnlocked] = useState(false);
+  const [pwd, setPwd] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string }>({
     nombre: "",
@@ -54,8 +59,15 @@ function Precios() {
   useEffect(() => {
     if (loading) return;
     if (!isAuth) { navigate({ to: "/" }); return; }
-    getServicios().then(setServicios);
+    if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1") {
+      setUnlocked(true);
+    }
   }, [loading, isAuth, navigate]);
+
+  useEffect(() => {
+    if (!unlocked) return;
+    getServicios().then(setServicios);
+  }, [unlocked]);
 
   const startEdit = (s: Servicio) => {
     setEditingId(s.id);
@@ -109,6 +121,51 @@ function Precios() {
   };
 
   if (loading || !isAuth) return null;
+
+  if (!unlocked) {
+    return (
+      <div className="min-h-screen bg-foreground text-background flex items-center justify-center p-6">
+        <div className="glass-dark rounded-2xl p-8 w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <div className="mx-auto size-14 rounded-full bg-primary/15 flex items-center justify-center">
+              <Lock className="size-6 text-primary" />
+            </div>
+            <h1 className="font-display text-2xl">Precios · Acceso privado</h1>
+            <p className="text-sm text-background/60">Introduce la contraseña para continuar.</p>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (pwd === PRECIOS_PASSWORD) {
+                sessionStorage.setItem(SESSION_KEY, "1");
+                setUnlocked(true);
+              } else {
+                toast.error("Contraseña incorrecta");
+              }
+            }}
+            className="space-y-3"
+          >
+            <div className="space-y-2">
+              <Label className="text-background/80">Contraseña</Label>
+              <Input
+                type="password"
+                value={pwd}
+                onChange={(e) => setPwd(e.target.value)}
+                className="bg-background/5 border-primary/30 text-background"
+                autoFocus
+              />
+            </div>
+            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              Entrar
+            </Button>
+            <Button asChild type="button" variant="outline" className="w-full border-primary/30 text-primary bg-transparent">
+              <Link to="/admin"><ArrowLeft className="size-4" /> Volver al panel</Link>
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   const byCat = servicios.reduce<Record<string, Servicio[]>>((acc, s) => {
     (acc[s.categoria] = acc[s.categoria] || []).push(s);
