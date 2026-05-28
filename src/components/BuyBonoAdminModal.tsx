@@ -73,13 +73,14 @@ export function BuyBonoAdminModal({ open, onOpenChange }: Props) {
   const selected = catalogo.find((c) => c.id === catalogoId);
 
   const confirm = async () => {
-    if (!nombre.trim() || !telefono.trim() || !catalogoId) {
+    const finalNombre = (cliente ? nombre : (nombre || query)).trim();
+    if (!finalNombre || !telefono.trim() || !catalogoId) {
       return toast.error("Selecciona cliente y bono");
     }
     setStage("loading");
     const res = await comprarBonoCatalogo({
       catalogoId,
-      nombre: nombre.trim(),
+      nombre: finalNombre,
       telefono: telefono.trim(),
       email: email.trim() || null,
     });
