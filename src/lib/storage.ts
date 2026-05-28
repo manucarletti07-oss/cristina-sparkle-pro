@@ -513,6 +513,28 @@ export async function getBonosCatalogo(): Promise<BonoCatalogo[]> {
   return (data ?? []) as BonoCatalogo[];
 }
 
+export async function updateBonoCatalogo(id: string, patch: Partial<Omit<BonoCatalogo, "id">>) {
+  const { error } = await supabase.from("bonos_catalogo").update(patch).eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
+export async function createBonoCatalogo(input: Omit<BonoCatalogo, "id">) {
+  const { data, error } = await supabase
+    .from("bonos_catalogo")
+    .insert({ nombre: input.nombre.trim(), sesiones: input.sesiones, precio: input.precio, activo: true })
+    .select("id,nombre,sesiones,precio")
+    .single();
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const, bono: data as BonoCatalogo };
+}
+
+export async function deleteBonoCatalogo(id: string) {
+  const { error } = await supabase.from("bonos_catalogo").update({ activo: false }).eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
 export async function comprarBonoCatalogo(input: {
   catalogoId: string;
   nombre: string;
