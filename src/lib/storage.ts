@@ -57,6 +57,9 @@ export type Cita = {
   estado: "pendiente" | "realizada";
   bonoId?: string | null;
   createdAt: string;
+  cobrada?: boolean;
+  precio_cobrado?: number | null;
+  fecha_cobro?: string | null;
 };
 
 type ClienteJoin = {
@@ -84,6 +87,9 @@ type Row = {
   estado: "pendiente" | "realizada";
   bono_id: string | null;
   created_at: string;
+  cobrada?: boolean;
+  precio_cobrado?: number | null;
+  fecha_cobro?: string | null;
   clientes: ClienteJoin | null;
 };
 
@@ -104,6 +110,9 @@ const toCita = (r: Row): Cita => ({
   estado: r.estado,
   bonoId: r.bono_id,
   createdAt: r.created_at,
+  cobrada: r.cobrada ?? false,
+  precio_cobrado: r.precio_cobrado ?? null,
+  fecha_cobro: r.fecha_cobro ?? null,
 });
 
 export async function getCitas(): Promise<Cita[]> {
