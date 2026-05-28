@@ -12,17 +12,15 @@ import {
   addMonths,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, Euro, Lock, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowLeft, Euro, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { PrivateAccessGate } from "@/components/PrivateAccessGate";
 import { getCitasCobradasRango, type Cita } from "@/lib/storage";
 
-const INGRESOS_PASSWORD = "ingresos123";
-const SESSION_KEY = "ingresos_unlocked";
+const SESSION_KEY = "private_ingresos_unlocked";
 
 export const Route = createFileRoute("/admin/ingresos")({
   head: () => ({
@@ -38,7 +36,6 @@ function Ingresos() {
   const { isAuth, loading } = useAuth();
   const navigate = useNavigate();
   const [unlocked, setUnlocked] = useState(false);
-  const [pwd, setPwd] = useState("");
   const [citas, setCitas] = useState<Cita[]>([]);
   const today = new Date().toISOString().slice(0, 10);
   const [vista, setVista] = useState<"dia" | "semana" | "mes">("dia");
@@ -80,7 +77,6 @@ function Ingresos() {
       navigate({ to: "/" });
       return;
     }
-    if (sessionStorage.getItem(SESSION_KEY) === "1") setUnlocked(true);
   }, [loading, isAuth, navigate]);
 
   useEffect(() => {
@@ -100,48 +96,7 @@ function Ingresos() {
   if (loading || !isAuth) return null;
 
   if (!unlocked) {
-    return (
-      <div className="min-h-screen bg-foreground text-background flex items-center justify-center p-6">
-        <div className="glass-dark rounded-2xl p-8 w-full max-w-md space-y-6">
-          <div className="text-center space-y-2">
-            <div className="mx-auto size-14 rounded-full bg-primary/15 flex items-center justify-center">
-              <Lock className="size-6 text-primary" />
-            </div>
-            <h1 className="font-display text-2xl">Ingresos · Acceso privado</h1>
-            <p className="text-sm text-background/60">Introduce la contraseña para continuar.</p>
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (pwd === INGRESOS_PASSWORD) {
-                sessionStorage.setItem(SESSION_KEY, "1");
-                setUnlocked(true);
-              } else {
-                toast.error("Contraseña incorrecta");
-              }
-            }}
-            className="space-y-3"
-          >
-            <div className="space-y-2">
-              <Label className="text-background/80">Contraseña</Label>
-              <Input
-                type="password"
-                value={pwd}
-                onChange={(e) => setPwd(e.target.value)}
-                className="bg-background/5 border-primary/30 text-background"
-                autoFocus
-              />
-            </div>
-            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              Entrar
-            </Button>
-            <Button asChild type="button" variant="outline" className="w-full border-primary/30 text-primary bg-transparent">
-              <Link to="/admin"><ArrowLeft className="size-4" /> Volver al panel</Link>
-            </Button>
-          </form>
-        </div>
-      </div>
-    );
+    return <PrivateAccessGate title="Ingresos · Acceso privado" sessionKey={SESSION_KEY} onUnlocked={() => setUnlocked(true)} />;
   }
 
   return (
