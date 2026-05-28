@@ -1,14 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { format, parseISO } from "date-fns";
+import {
+  format,
+  parseISO,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  addDays,
+  addWeeks,
+  addMonths,
+} from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, Euro, Lock } from "lucide-react";
+import { ArrowLeft, Euro, Lock, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { getCitasCobradas, type Cita } from "@/lib/storage";
+import { getCitasCobradasRango, type Cita } from "@/lib/storage";
 
 const INGRESOS_PASSWORD = "ingresos123";
 const SESSION_KEY = "ingresos_unlocked";
@@ -30,7 +41,38 @@ function Ingresos() {
   const [pwd, setPwd] = useState("");
   const [citas, setCitas] = useState<Cita[]>([]);
   const today = new Date().toISOString().slice(0, 10);
-  const [fecha, setFecha] = useState(today);
+  const [vista, setVista] = useState<"dia" | "semana" | "mes">("dia");
+  const [anchor, setAnchor] = useState(today);
+
+  const rango = useMemo(() => {
+    const ref = parseISO(anchor);
+    if (vista === "dia") return { desde: anchor, hasta: anchor };
+    if (vista === "semana") {
+      return {
+        desde: format(startOfWeek(ref, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+        hasta: format(endOfWeek(ref, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+      };
+    }
+    return {
+      desde: format(startOfMonth(ref), "yyyy-MM-dd"),
+      hasta: format(endOfMonth(ref), "yyyy-MM-dd"),
+    };
+  }, [vista, anchor]);
+
+  const rangoLabel = useMemo(() => {
+    const d = parseISO(rango.desde);
+    const h = parseISO(rango.hasta);
+    if (vista === "dia") return format(d, "EEEE d 'de' MMMM yyyy", { locale: es });
+    if (vista === "semana")
+      return `${format(d, "d MMM", { locale: es })} – ${format(h, "d MMM yyyy", { locale: es })}`;
+    return format(d, "MMMM yyyy", { locale: es });
+  }, [rango, vista]);
+
+  const shift = (dir: 1 | -1) => {
+    const ref = parseISO(anchor);
+    const next = vista === "dia" ? addDays(ref, dir) : vista === "semana" ? addWeeks(ref, dir) : addMonths(ref, dir);
+    setAnchor(format(next, "yyyy-MM-dd"));
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -43,8 +85,8 @@ function Ingresos() {
 
   useEffect(() => {
     if (!unlocked) return;
-    getCitasCobradas(fecha).then(setCitas);
-  }, [unlocked, fecha]);
+    getCitasCobradasRango(rango.desde, rango.hasta).then(setCitas);
+  }, [unlocked, rango]);
 
   const stats = useMemo(() => {
     const total = citas.reduce((s, c) => s + (c.total || 0), 0);
@@ -121,17 +163,37 @@ function Ingresos() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="space-y-2">
-            <Label className="text-background/70 text-xs uppercase tracking-[0.2em]">Fecha</Label>
-            <Input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="bg-background/5 border-primary/30 text-background w-[200px]"
-            />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex rounded-full border border-primary/30 bg-background/5 p-1">
+            {(["dia", "semana", "mes"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setVista(v)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-[11px] uppercase tracking-[0.2em] font-semibold transition-colors",
+                  vista === v ? "bg-primary text-primary-foreground" : "text-background/70 hover:text-primary"
+                )}
+              >
+                {v === "dia" ? "Día" : v === "semana" ? "Semana" : "Mes"}
+              </button>
+            ))}
           </div>
-          <Button variant="outline" onClick={() => setFecha(today)} className="border-primary/30 text-primary bg-transparent">
+          <div className="flex items-center gap-1 rounded-full border border-primary/30 bg-background/5">
+            <Button variant="ghost" size="icon" onClick={() => shift(-1)} className="rounded-full text-primary hover:bg-primary/10">
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="px-3 text-sm text-background min-w-[240px] text-center capitalize">{rangoLabel}</span>
+            <Button variant="ghost" size="icon" onClick={() => shift(1)} className="rounded-full text-primary hover:bg-primary/10">
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+          <Input
+            type="date"
+            value={anchor}
+            onChange={(e) => e.target.value && setAnchor(e.target.value)}
+            className="bg-background/5 border-primary/30 text-background w-[180px]"
+          />
+          <Button variant="outline" onClick={() => setAnchor(today)} className="border-primary/30 text-primary bg-transparent">
             Hoy
           </Button>
         </div>
@@ -175,7 +237,7 @@ function Ingresos() {
         </div>
 
         <p className="text-xs text-background/40">
-          Fecha: {format(parseISO(fecha), "EEEE d 'de' MMMM yyyy", { locale: es })}
+          Rango: {rangoLabel}
         </p>
       </main>
     </div>
