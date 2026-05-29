@@ -33,6 +33,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -76,14 +77,36 @@ export const Route = createFileRoute("/admin")({
 
 type Filter = "todas" | "pendiente" | "realizada";
 type Vista = "dia" | "semana" | "mes";
+type ClienteExport = {
+  nombre: string | null;
+  apellido_1: string | null;
+  apellido_2: string | null;
+  telefono: string | null;
+  email: string | null;
+  alias: string | null;
+  observaciones: string | null;
+  created_at: string | null;
+};
+type CitaExport = {
+  fecha: string;
+  hora: string;
+  nombre: string;
+  telefono: string | null;
+  email: string | null;
+  profesional: string;
+  servicios: string[] | null;
+  total: number;
+  estado: string;
+  cobrada: boolean;
+  precio_cobrado: number | null;
+  observaciones: string | null;
+};
 
 function whatsappData(cita: Cita) {
   let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
-  // Quita prefijo 00
   if (phone.startsWith("00")) phone = phone.slice(2);
-  // Si son 9 dígitos (móvil ES), añadimos prefijo
   const clean = phone.length === 9 ? `34${phone}` : phone;
-  const text = `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`;
+  const text = `Hola ${cita.nombre}, desde Cristina Cebrián le recordamos su cita el ${cita.fecha} a las ${cita.hora}.`;
   return { phone: clean, text, url: clean ? `https://wa.me/${clean}?text=${encodeURIComponent(text)}` : "" };
 }
 
@@ -731,13 +754,13 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             onClick={() => {
               const { phone, text, url } = whatsappData(cita);
               if (!phone) return toast.error("Esta cita no tiene teléfono para WhatsApp");
-              const win = window.open(url, "_blank", "noopener,noreferrer");
+              const win = window.open(url, "_blank");
               if (!win) {
                 navigator.clipboard?.writeText(text);
                 toast.success("Mensaje copiado", { description: "Abre WhatsApp y pégalo en el chat del cliente." });
               }
             }}
-            className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
+            className="flex-1 lg:w-full justify-center rounded-full border-whatsapp/30 bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30 font-semibold"
           >
             <MessageCircle className="size-4" /> WhatsApp
           </Button>
@@ -828,6 +851,19 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
     URL.revokeObjectURL(url);
   };
 
+  const fetchAllRows = async <T,>(queryFactory: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) => {
+    const all: T[] = [];
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await queryFactory(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const page = data ?? [];
+      all.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return all;
+  };
+
   const handleExport = async () => {
     setBusy(true);
     try {
@@ -842,14 +878,17 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
         return Math.ceil(((+t - +yearStart) / 86400000 + 1) / 7);
       };
-      const stamp = `${dias[now.getDay()]}-${String(now.getDate()).padStart(2, "0")}-${meses[now.getMonth()]}-${now.getFullYear()}-semana${getWeek(now)}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
+      const stamp = `${dias[now.getDay()]}-${String(now.getDate()).padStart(2, "0")}-${meses[now.getMonth()]}-${now.getFullYear()}-semana${getWeek(now)}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}${String(now.getSeconds()).padStart(2,"0")}`;
       const tag = stamp;
 
       // CLIENTES (todos siempre, es la "copia de seguridad")
-      const { data: cli } = await supabase
-        .from("clientes")
-        .select("nombre,apellido_1,apellido_2,telefono,email,alias,observaciones,created_at")
-        .order("nombre");
+      const cli = await fetchAllRows<ClienteExport>((from, to) =>
+        supabase
+          .from("clientes")
+          .select("nombre,apellido_1,apellido_2,telefono,email,alias,observaciones,created_at")
+          .order("nombre")
+          .range(from, to)
+      );
       const cliRows = (cli ?? []).map((c) => ({
         Nombre: c.nombre ?? "",
         Apellido1: c.apellido_1 ?? "",
@@ -860,19 +899,18 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         Observaciones: c.observaciones ?? "",
         Alta: c.created_at ?? "",
       }));
-      downloadExcel(
-        `clientes_${tag}.xls`,
-        toExcelXml([{ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows }])
-      );
 
       // CITAS (rango seleccionado)
-      const { data: cit } = await supabase
-        .from("citas")
-        .select("fecha,hora,nombre,telefono,email,profesional,servicios,total,estado,cobrada,precio_cobrado,observaciones")
-        .gte("fecha", desde)
-        .lte("fecha", hasta)
-        .order("fecha", { ascending: true })
-        .order("hora", { ascending: true });
+      const cit = await fetchAllRows<CitaExport>((from, to) =>
+        supabase
+          .from("citas")
+          .select("fecha,hora,nombre,telefono,email,profesional,servicios,total,estado,cobrada,precio_cobrado,observaciones")
+          .gte("fecha", desde)
+          .lte("fecha", hasta)
+          .order("fecha", { ascending: true })
+          .order("hora", { ascending: true })
+          .range(from, to)
+      );
       const citRows = (cit ?? []).map((c) => ({
         Fecha: c.fecha,
         Hora: c.hora,
@@ -888,7 +926,11 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         Observaciones: c.observaciones ?? "",
       }));
       downloadExcel(
-        `citas_${tag}.xls`,
+        `clientes_cristina_${tag}.xls`,
+        toExcelXml([{ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows }])
+      );
+      downloadExcel(
+        `citas_cristina_${rango}_${tag}.xls`,
         toExcelXml([{ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows }])
       );
 
