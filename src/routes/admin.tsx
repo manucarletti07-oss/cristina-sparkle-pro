@@ -855,37 +855,6 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
     return { desde: "1900-01-01", hasta: "2999-12-31" };
   };
 
-  const toExcelXml = (sheets: { name: string; headers: string[]; rows: Record<string, unknown>[] }[]) => {
-    const esc = (v: unknown) =>
-      String(v ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    const sheetXml = sheets
-      .map(({ name, headers, rows }) => {
-        const headerRow = `<Row>${headers.map((h) => `<Cell><Data ss:Type="String">${esc(h)}</Data></Cell>`).join("")}</Row>`;
-        const bodyRows = rows
-          .map((row) => `<Row>${headers.map((h) => `<Cell><Data ss:Type="String">${esc(row[h])}</Data></Cell>`).join("")}</Row>`)
-          .join("");
-        return `<Worksheet ss:Name="${esc(name)}"><Table>${headerRow}${bodyRows}</Table></Worksheet>`;
-      })
-      .join("");
-    return `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheetXml}</Workbook>`;
-  };
-
-  const downloadExcel = (filename: string, content: string) => {
-    const blob = new Blob([content], { type: "application/vnd.ms-excel;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const fetchAllRows = async <T,>(queryFactory: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) => {
     const all: T[] = [];
     const pageSize = 1000;
