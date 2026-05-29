@@ -74,16 +74,14 @@ export const Route = createFileRoute("/admin")({
 type Filter = "todas" | "pendiente" | "realizada";
 type Vista = "dia" | "semana" | "mes";
 
-function whatsappUrl(cita: Cita) {
+function whatsappData(cita: Cita) {
   let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
   // Quita prefijo 00
   if (phone.startsWith("00")) phone = phone.slice(2);
   // Si son 9 dígitos (móvil ES), añadimos prefijo
   const clean = phone.length === 9 ? `34${phone}` : phone;
-  const msg = encodeURIComponent(
-    `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`
-  );
-  return clean ? `https://wa.me/${clean}?text=${msg}` : "";
+  const text = `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`;
+  return { phone: clean, text, url: clean ? `https://web.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(text)}` : "" };
 }
 
 function Admin() {
@@ -719,9 +717,13 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             type="button"
             variant="outline"
             onClick={() => {
-              const url = whatsappUrl(cita);
-              if (!url) return toast.error("Esta cita no tiene teléfono para WhatsApp");
-              window.open(url, "_blank", "noopener,noreferrer");
+              const { phone, text, url } = whatsappData(cita);
+              if (!phone) return toast.error("Esta cita no tiene teléfono para WhatsApp");
+              const win = window.open(url, "_blank", "noopener,noreferrer");
+              if (!win) {
+                navigator.clipboard?.writeText(text);
+                toast.success("Mensaje copiado", { description: "Abre WhatsApp y pégalo en el chat del cliente." });
+              }
             }}
             className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
           >
@@ -783,18 +785,27 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
     return { desde: "1900-01-01", hasta: "2999-12-31" };
   };
 
-  const toCsv = (rows: Record<string, unknown>[]) => {
-    if (rows.length === 0) return "";
-    const headers = Object.keys(rows[0]);
-    const esc = (v: unknown) => {
-      const s = v == null ? "" : String(v);
-      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    return [headers.join(","), ...rows.map((r) => headers.map((h) => esc(r[h])).join(","))].join("\n");
+  const toExcelXml = (sheets: { name: string; headers: string[]; rows: Record<string, unknown>[] }[]) => {
+    const esc = (v: unknown) =>
+      String(v ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    const sheetXml = sheets
+      .map(({ name, headers, rows }) => {
+        const headerRow = `<Row>${headers.map((h) => `<Cell><Data ss:Type="String">${esc(h)}</Data></Cell>`).join("")}</Row>`;
+        const bodyRows = rows
+          .map((row) => `<Row>${headers.map((h) => `<Cell><Data ss:Type="String">${esc(row[h])}</Data></Cell>`).join("")}</Row>`)
+          .join("");
+        return `<Worksheet ss:Name="${esc(name)}"><Table>${headerRow}${bodyRows}</Table></Worksheet>`;
+      })
+      .join("");
+    return `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheetXml}</Workbook>`;
   };
 
-  const download = (filename: string, content: string) => {
-    const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
+  const downloadExcel = (filename: string, content: string) => {
+    const blob = new Blob([content], { type: "application/vnd.ms-excel;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -826,7 +837,10 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         Observaciones: c.observaciones ?? "",
         Alta: c.created_at ?? "",
       }));
-      download(`clientes_${tag}.csv`, toCsv(cliRows));
+      downloadExcel(
+        `clientes_${tag}.xls`,
+        toExcelXml([{ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows }])
+      );
 
       // CITAS (rango seleccionado)
       const { data: cit } = await supabase
@@ -850,7 +864,10 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         PrecioCobrado: c.precio_cobrado ?? "",
         Observaciones: c.observaciones ?? "",
       }));
-      download(`citas_${tag}.csv`, toCsv(citRows));
+      downloadExcel(
+        `citas_${tag}.xls`,
+        toExcelXml([{ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows }])
+      );
 
       toast.success("Exportación completada", {
         description: `${cliRows.length} clientes · ${citRows.length} citas`,
@@ -869,7 +886,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Exportar datos</DialogTitle>
           <DialogDescription>
-            Descarga una copia de seguridad de tus clientes y del historial de citas en formato CSV (se abre con Excel).
+            Descarga una copia de seguridad de tus clientes y del historial de citas en formato Excel.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
