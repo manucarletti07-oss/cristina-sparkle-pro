@@ -16,6 +16,7 @@ import { SERVICIOS, type ServiceCategory, type Treatment } from "@/lib/config";
 import {
   generarSlots,
   getOcupadasPorFecha,
+  getServiciosOcupadosPorFecha,
   PROFESIONALES,
   saveCita,
   getBonoActivoByTelefono,
@@ -56,6 +57,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
   const [stage, setStage] = useState<"form" | "loading" | "done">("form");
   const [cat, setCat] = useState<ServiceCategory | null>(null);
   const [ocupadas, setOcupadas] = useState<Map<string, Set<Profesional>>>(new Map());
+  const [serviciosOcupados, setServiciosOcupados] = useState<Map<string, Set<string>>>(new Map());
   const [bonoActivo, setBonoActivo] = useState<Bono | null>(null);
   const [usarBono, setUsarBono] = useState(false);
   const [serviciosDb, setServiciosDb] = useState<Treatment[]>([]);
@@ -145,9 +147,11 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
   useEffect(() => {
     if (!fechaIsoSel) {
       setOcupadas(new Map());
+      setServiciosOcupados(new Map());
       return;
     }
     getOcupadasPorFecha(fechaIsoSel).then(setOcupadas);
+    getServiciosOcupadosPorFecha(fechaIsoSel).then(setServiciosOcupados);
   }, [fechaIsoSel]);
 
   // Si cambia profesional u hora y deja de estar disponible, limpiar hora.
@@ -360,23 +364,32 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                       <div className="grid grid-cols-3 gap-1.5 max-h-60 overflow-y-auto">
                         {HORAS.map((h) => {
                           const ocupada = ocupadas.get(h)?.has(profesional) ?? false;
+                          const servSet = serviciosOcupados.get(h);
+                          const choca = !!servSet && selected.some((s) => servSet.has(s));
+                          const bloqueada = ocupada || choca;
                           return (
                             <button
                               key={h}
-                              disabled={ocupada}
+                              disabled={bloqueada}
                               onClick={() => {
                                 setHora(h);
                                 document.body.click();
                               }}
                               className={cn(
                                 "text-xs py-1.5 rounded-md transition-colors relative",
-                                ocupada
+                                bloqueada
                                   ? "bg-muted text-muted-foreground/40 line-through cursor-not-allowed"
                                   : hora === h
                                   ? "bg-primary text-primary-foreground"
                                   : "hover:bg-primary/10 text-foreground"
                               )}
-                              title={ocupada ? `Ocupada con ${profesional}` : ""}
+                              title={
+                                choca
+                                  ? "Tratamiento ya reservado a esta hora"
+                                  : ocupada
+                                  ? `Ocupada con ${profesional}`
+                                  : ""
+                              }
                             >
                               {h}
                             </button>
