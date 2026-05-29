@@ -30,6 +30,7 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
 import { ClienteSearchDropdown } from "@/components/ClienteSearchDropdown";
 import { BuyBonoAdminModal } from "@/components/BuyBonoAdminModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -73,12 +75,15 @@ type Filter = "todas" | "pendiente" | "realizada";
 type Vista = "dia" | "semana" | "mes";
 
 function whatsappUrl(cita: Cita) {
-  const phone = cita.telefono.replace(/[^\d]/g, "");
+  let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
+  // Quita prefijo 00
+  if (phone.startsWith("00")) phone = phone.slice(2);
+  // Si son 9 dígitos (móvil ES), añadimos prefijo
   const clean = phone.length === 9 ? `34${phone}` : phone;
   const msg = encodeURIComponent(
     `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`
   );
-  return `https://wa.me/${clean}?text=${msg}`;
+  return `https://api.whatsapp.com/send?phone=${clean}&text=${msg}`;
 }
 
 function Admin() {
@@ -96,6 +101,7 @@ function Admin() {
   const [ready, setReady] = useState(false);
   const [openNew, setOpenNew] = useState(false);
   const [openBono, setOpenBono] = useState(false);
+  const [openExport, setOpenExport] = useState(false);
   const [editing, setEditing] = useState<Cita | null>(null);
 
   useEffect(() => {
@@ -288,6 +294,13 @@ function Admin() {
               <Gift className="size-4" /> Comprar bono
             </Button>
             <Button
+              onClick={() => setOpenExport(true)}
+              variant="outline"
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+            >
+              <Download className="size-4" /> Exportar datos
+            </Button>
+            <Button
               onClick={handleLogout}
               variant="outline"
               className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
@@ -434,6 +447,7 @@ function Admin() {
       <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
       <EditCitaModal cita={editing} open={!!editing} onOpenChange={(v) => !v && setEditing(null)} />
       <BuyBonoAdminModal open={openBono} onOpenChange={setOpenBono} />
+      <ExportModal open={openExport} onOpenChange={setOpenExport} />
     </div>
   );
 }
