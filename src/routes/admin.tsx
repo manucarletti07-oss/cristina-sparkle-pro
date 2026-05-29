@@ -827,6 +827,19 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
     URL.revokeObjectURL(url);
   };
 
+  const fetchAllRows = async <T,>(queryFactory: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>) => {
+    const all: T[] = [];
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await queryFactory(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const page = data ?? [];
+      all.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return all;
+  };
+
   const handleExport = async () => {
     setBusy(true);
     try {
@@ -841,14 +854,17 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
         return Math.ceil(((+t - +yearStart) / 86400000 + 1) / 7);
       };
-      const stamp = `${dias[now.getDay()]}-${String(now.getDate()).padStart(2, "0")}-${meses[now.getMonth()]}-${now.getFullYear()}-semana${getWeek(now)}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
+      const stamp = `${dias[now.getDay()]}-${String(now.getDate()).padStart(2, "0")}-${meses[now.getMonth()]}-${now.getFullYear()}-semana${getWeek(now)}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}${String(now.getSeconds()).padStart(2,"0")}`;
       const tag = stamp;
 
       // CLIENTES (todos siempre, es la "copia de seguridad")
-      const { data: cli } = await supabase
-        .from("clientes")
-        .select("nombre,apellido_1,apellido_2,telefono,email,alias,observaciones,created_at")
-        .order("nombre");
+      const cli = await fetchAllRows((from, to) =>
+        supabase
+          .from("clientes")
+          .select("nombre,apellido_1,apellido_2,telefono,email,alias,observaciones,created_at")
+          .order("nombre")
+          .range(from, to)
+      );
       const cliRows = (cli ?? []).map((c) => ({
         Nombre: c.nombre ?? "",
         Apellido1: c.apellido_1 ?? "",
@@ -859,19 +875,18 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         Observaciones: c.observaciones ?? "",
         Alta: c.created_at ?? "",
       }));
-      downloadExcel(
-        `clientes_${tag}.xls`,
-        toExcelXml([{ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows }])
-      );
 
       // CITAS (rango seleccionado)
-      const { data: cit } = await supabase
-        .from("citas")
-        .select("fecha,hora,nombre,telefono,email,profesional,servicios,total,estado,cobrada,precio_cobrado,observaciones")
-        .gte("fecha", desde)
-        .lte("fecha", hasta)
-        .order("fecha", { ascending: true })
-        .order("hora", { ascending: true });
+      const cit = await fetchAllRows((from, to) =>
+        supabase
+          .from("citas")
+          .select("fecha,hora,nombre,telefono,email,profesional,servicios,total,estado,cobrada,precio_cobrado,observaciones")
+          .gte("fecha", desde)
+          .lte("fecha", hasta)
+          .order("fecha", { ascending: true })
+          .order("hora", { ascending: true })
+          .range(from, to)
+      );
       const citRows = (cit ?? []).map((c) => ({
         Fecha: c.fecha,
         Hora: c.hora,
@@ -887,8 +902,11 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         Observaciones: c.observaciones ?? "",
       }));
       downloadExcel(
-        `citas_${tag}.xls`,
-        toExcelXml([{ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows }])
+        `backup_cristina_${rango}_${tag}.xls`,
+        toExcelXml([
+          { name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows },
+          { name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows },
+        ])
       );
 
       toast.success("Exportación completada", {
