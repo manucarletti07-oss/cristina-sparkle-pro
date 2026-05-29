@@ -839,7 +839,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
       }));
       downloadExcel(
         `clientes_${tag}.xls`,
-        toExcelXml({ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows })
+        toExcelXml([{ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows }])
       );
 
       // CITAS (rango seleccionado)
@@ -866,7 +866,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
       }));
       downloadExcel(
         `citas_${tag}.xls`,
-        toExcelXml({ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows })
+        toExcelXml([{ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows }])
       );
 
       toast.success("Exportación completada", {
