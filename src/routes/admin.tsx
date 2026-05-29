@@ -21,7 +21,9 @@ import {
   IdCard,
   LogOut,
   MessageCircle,
+  Moon,
   Phone,
+  Sun,
   Trash2,
   User as UserIcon,
   Sparkles,
@@ -52,6 +54,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
 import { deleteCita, getBonosPanel, getCitas, marcarCitaCobrada, PROFESIONALES, updateCita, type Cita, type Bono, type Profesional } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingModal } from "@/components/BookingModal";
@@ -86,6 +89,7 @@ function whatsappData(cita: Cita) {
 
 function Admin() {
   const { isAuth, loading: authLoading, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [citas, setCitas] = useState<Cita[]>([]);
@@ -297,6 +301,14 @@ function Admin() {
               className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
             >
               <Download className="size-4" /> Exportar datos
+            </Button>
+            <Button
+              onClick={toggleTheme}
+              variant="outline"
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+              title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+            >
+              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </Button>
             <Button
               onClick={handleLogout}
