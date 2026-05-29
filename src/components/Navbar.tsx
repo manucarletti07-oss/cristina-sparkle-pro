@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, Moon, Shield, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoginModal } from "./LoginModal";
