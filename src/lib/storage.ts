@@ -149,9 +149,49 @@ export async function getOcupadasPorFecha(
   return map;
 }
 
+/** Devuelve, por cada hora del día, el set de NOMBRES DE SERVICIO ya reservados
+ * (sin importar la profesional). Sirve para bloquear el mismo tratamiento a
+ * la misma hora aunque sea con otra profesional. */
+export async function getServiciosOcupadosPorFecha(
+  fecha: string
+): Promise<Map<string, Set<string>>> {
+  const { data, error } = await supabase
+    .from("citas")
+    .select("hora, servicios")
+    .eq("fecha", fecha)
+    .eq("estado", "pendiente");
+  const map = new Map<string, Set<string>>();
+  if (error || !data) return map;
+  for (const r of data as { hora: string; servicios: string[] }[]) {
+    const set = map.get(r.hora) ?? new Set<string>();
+    for (const s of r.servicios ?? []) set.add(s);
+    map.set(r.hora, set);
+  }
+  return map;
+}
+
 export async function saveCita(
   cita: Omit<Cita, "id" | "createdAt" | "estado" | "apellido_1" | "apellido_2">
 ): Promise<{ ok: true; cita: Cita } | { ok: false; error: string }> {
+  // No permitir el mismo tratamiento en el mismo día/hora aunque sea con otra profesional
+  {
+    const { data: solapadas } = await supabase
+      .from("citas")
+      .select("servicios")
+      .eq("fecha", cita.fecha)
+      .eq("hora", cita.hora)
+      .eq("estado", "pendiente");
+    if (solapadas) {
+      const yaReservados = new Set<string>();
+      for (const r of solapadas as { servicios: string[] }[]) {
+        for (const s of r.servicios ?? []) yaReservados.add(s);
+      }
+      const choca = cita.servicios.find((s) => yaReservados.has(s));
+      if (choca) {
+        return { ok: false, error: `"${choca}" ya está reservado a las ${cita.hora}` };
+      }
+    }
+  }
   // Busca o crea cliente por teléfono
   const tel = cita.telefono.trim();
   let clienteId = cita.clienteId ?? null;
