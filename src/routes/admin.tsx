@@ -102,12 +102,55 @@ type CitaExport = {
   observaciones: string | null;
 };
 
+type ExportSheet = { name: string; headers: string[]; rows: Record<string, unknown>[] };
+
 function whatsappData(cita: Cita) {
   let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
   if (phone.startsWith("00")) phone = phone.slice(2);
   const clean = phone.length === 9 ? `34${phone}` : phone;
   const text = `Hola ${cita.nombre}, desde Cristina Cebrián le recordamos su cita el ${cita.fecha} a las ${cita.hora}.`;
-  return { phone: clean, text, url: clean ? `https://wa.me/${clean}?text=${encodeURIComponent(text)}` : "" };
+  return { phone: clean, text, url: clean ? `whatsapp://send?phone=${clean}&text=${encodeURIComponent(text)}` : "" };
+}
+
+function openWhatsAppReminder(cita: Cita) {
+  const { phone, text, url } = whatsappData(cita);
+  if (!phone) {
+    toast.error("Esta cita no tiene teléfono para WhatsApp");
+    return;
+  }
+
+  navigator.clipboard?.writeText(text).catch(() => undefined);
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast.success("Abriendo WhatsApp", { description: "Si el navegador no lo abre, el mensaje ya está copiado para pegarlo." });
+}
+
+function csvEscape(value: unknown) {
+  const raw = String(value ?? "");
+  return /[";\n\r]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+}
+
+function toCsv({ headers, rows }: ExportSheet) {
+  const bom = "\ufeff";
+  const lines = [headers.join(";"), ...rows.map((row) => headers.map((header) => csvEscape(row[header])).join(";"))];
+  return `${bom}${lines.join("\n")}`;
+}
+
+function downloadFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function Admin() {
@@ -751,15 +794,7 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              const { phone, text, url } = whatsappData(cita);
-              if (!phone) return toast.error("Esta cita no tiene teléfono para WhatsApp");
-              const win = window.open(url, "_blank");
-              if (!win) {
-                navigator.clipboard?.writeText(text);
-                toast.success("Mensaje copiado", { description: "Abre WhatsApp y pégalo en el chat del cliente." });
-              }
-            }}
+            onClick={() => openWhatsAppReminder(cita)}
             className="flex-1 lg:w-full justify-center rounded-full border-whatsapp/30 bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30 font-semibold"
           >
             <MessageCircle className="size-4" /> WhatsApp
@@ -818,37 +853,6 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
       };
     }
     return { desde: "1900-01-01", hasta: "2999-12-31" };
-  };
-
-  const toExcelXml = (sheets: { name: string; headers: string[]; rows: Record<string, unknown>[] }[]) => {
-    const esc = (v: unknown) =>
-      String(v ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    const sheetXml = sheets
-      .map(({ name, headers, rows }) => {
-        const headerRow = `<Row>${headers.map((h) => `<Cell><Data ss:Type="String">${esc(h)}</Data></Cell>`).join("")}</Row>`;
-        const bodyRows = rows
-          .map((row) => `<Row>${headers.map((h) => `<Cell><Data ss:Type="String">${esc(row[h])}</Data></Cell>`).join("")}</Row>`)
-          .join("");
-        return `<Worksheet ss:Name="${esc(name)}"><Table>${headerRow}${bodyRows}</Table></Worksheet>`;
-      })
-      .join("");
-    return `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheetXml}</Workbook>`;
-  };
-
-  const downloadExcel = (filename: string, content: string) => {
-    const blob = new Blob([content], { type: "application/vnd.ms-excel;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   const fetchAllRows = async <T,>(queryFactory: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) => {
@@ -925,14 +929,10 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         PrecioCobrado: c.precio_cobrado ?? "",
         Observaciones: c.observaciones ?? "",
       }));
-      downloadExcel(
-        `clientes_cristina_${tag}.xls`,
-        toExcelXml([{ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows }])
-      );
-      downloadExcel(
-        `citas_cristina_${rango}_${tag}.xls`,
-        toExcelXml([{ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows }])
-      );
+      const clientesSheet = { name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows };
+      const citasSheet = { name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows };
+      downloadFile(`clientes_cristina_${tag}.csv`, toCsv(clientesSheet), "text/csv;charset=utf-8");
+      downloadFile(`citas_cristina_${rango}_${tag}.csv`, toCsv(citasSheet), "text/csv;charset=utf-8");
 
       toast.success("Exportación completada", {
         description: `${cliRows.length} clientes · ${citRows.length} citas`,
@@ -951,7 +951,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Exportar datos</DialogTitle>
           <DialogDescription>
-            Descarga una copia de seguridad de tus clientes y del historial de citas en formato Excel.
+            Descarga una copia de seguridad de tus clientes y citas en CSV compatible con Excel.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
@@ -978,7 +978,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            Se descargarán 2 archivos: <strong>clientes</strong> (todos) y <strong>citas</strong> (rango seleccionado).
+            Se descargarán 2 archivos en Descargas: <strong>clientes</strong> (todos) y <strong>citas</strong> (rango seleccionado), con día, mes, semana y hora en el nombre.
           </p>
         </div>
         <DialogFooter>
