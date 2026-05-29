@@ -926,11 +926,12 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         Observaciones: c.observaciones ?? "",
       }));
       downloadExcel(
-        `backup_cristina_${rango}_${tag}.xls`,
-        toExcelXml([
-          { name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows },
-          { name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows },
-        ])
+        `clientes_cristina_${tag}.xls`,
+        toExcelXml([{ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows }])
+      );
+      downloadExcel(
+        `citas_cristina_${rango}_${tag}.xls`,
+        toExcelXml([{ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows }])
       );
 
       toast.success("Exportación completada", {
