@@ -929,14 +929,10 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         PrecioCobrado: c.precio_cobrado ?? "",
         Observaciones: c.observaciones ?? "",
       }));
-      downloadExcel(
-        `clientes_cristina_${tag}.xls`,
-        toExcelXml([{ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows }])
-      );
-      downloadExcel(
-        `citas_cristina_${rango}_${tag}.xls`,
-        toExcelXml([{ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows }])
-      );
+      const clientesSheet = { name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows };
+      const citasSheet = { name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows };
+      downloadFile(`clientes_cristina_${tag}.csv`, toCsv(clientesSheet), "text/csv;charset=utf-8");
+      downloadFile(`citas_cristina_${rango}_${tag}.csv`, toCsv(citasSheet), "text/csv;charset=utf-8");
 
       toast.success("Exportación completada", {
         description: `${cliRows.length} clientes · ${citRows.length} citas`,
