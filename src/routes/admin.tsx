@@ -77,6 +77,30 @@ export const Route = createFileRoute("/admin")({
 
 type Filter = "todas" | "pendiente" | "realizada";
 type Vista = "dia" | "semana" | "mes";
+type ClienteExport = {
+  nombre: string | null;
+  apellido_1: string | null;
+  apellido_2: string | null;
+  telefono: string | null;
+  email: string | null;
+  alias: string | null;
+  observaciones: string | null;
+  created_at: string | null;
+};
+type CitaExport = {
+  fecha: string;
+  hora: string;
+  nombre: string;
+  telefono: string | null;
+  email: string | null;
+  profesional: string;
+  servicios: string[] | null;
+  total: number;
+  estado: string;
+  cobrada: boolean;
+  precio_cobrado: number | null;
+  observaciones: string | null;
+};
 
 function whatsappData(cita: Cita) {
   let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
@@ -827,7 +851,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
     URL.revokeObjectURL(url);
   };
 
-  const fetchAllRows = async <T,>(queryFactory: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>) => {
+  const fetchAllRows = async <T,>(queryFactory: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) => {
     const all: T[] = [];
     const pageSize = 1000;
     for (let from = 0; ; from += pageSize) {
