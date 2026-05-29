@@ -886,7 +886,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Exportar datos</DialogTitle>
           <DialogDescription>
-            Descarga una copia de seguridad de tus clientes y del historial de citas en formato CSV (se abre con Excel).
+            Descarga una copia de seguridad de tus clientes y del historial de citas en formato Excel.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
