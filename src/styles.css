@@ -65,6 +65,8 @@
   --color-gold-soft: var(--gold-soft);
   --color-ink: var(--ink);
   --color-cream: var(--cream);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-foreground: var(--whatsapp-foreground);
   --font-display: "Playfair Display", serif;
   --font-sans: "Montserrat", system-ui, sans-serif;
 }
@@ -80,6 +82,8 @@
   --sage-deep: oklch(0.5 0.07 155);
   --ink: oklch(0.18 0 0);
   --cream: oklch(0.975 0.008 90);
+  --whatsapp: oklch(0.761 0.201 149.74);
+  --whatsapp-foreground: oklch(1 0 0);
 
   --background: oklch(0.985 0.006 90);
   --foreground: oklch(0.18 0.005 150);
