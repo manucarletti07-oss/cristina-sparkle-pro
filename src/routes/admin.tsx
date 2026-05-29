@@ -83,7 +83,7 @@ function whatsappUrl(cita: Cita) {
   const msg = encodeURIComponent(
     `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`
   );
-  return `https://api.whatsapp.com/send?phone=${clean}&text=${msg}`;
+  return clean ? `https://wa.me/${clean}?text=${msg}` : "";
 }
 
 function Admin() {
@@ -716,13 +716,16 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             <Pencil className="size-4" /> Modificar
           </Button>
           <Button
-            asChild
+            type="button"
             variant="outline"
+            onClick={() => {
+              const url = whatsappUrl(cita);
+              if (!url) return toast.error("Esta cita no tiene teléfono para WhatsApp");
+              window.open(url, "_blank", "noopener,noreferrer");
+            }}
             className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
           >
-            <a href={whatsappUrl(cita)} target="_blank" rel="noreferrer">
-              <MessageCircle className="size-4" /> WhatsApp
-            </a>
+            <MessageCircle className="size-4" /> WhatsApp
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
