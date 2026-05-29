@@ -756,3 +756,155 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
     </div>
   );
 }
+
+function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [rango, setRango] = useState<"dia" | "semana" | "mes" | "todo">("mes");
+  const [busy, setBusy] = useState(false);
+
+  const calcRango = () => {
+    const ref = parseISO(today);
+    if (rango === "dia") return { desde: today, hasta: today };
+    if (rango === "semana") {
+      return {
+        desde: format(startOfWeek(ref, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+        hasta: format(endOfWeek(ref, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+      };
+    }
+    if (rango === "mes") {
+      return {
+        desde: format(startOfMonth(ref), "yyyy-MM-dd"),
+        hasta: format(endOfMonth(ref), "yyyy-MM-dd"),
+      };
+    }
+    return { desde: "1900-01-01", hasta: "2999-12-31" };
+  };
+
+  const toCsv = (rows: Record<string, unknown>[]) => {
+    if (rows.length === 0) return "";
+    const headers = Object.keys(rows[0]);
+    const esc = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [headers.join(","), ...rows.map((r) => headers.map((h) => esc(r[h])).join(","))].join("\n");
+  };
+
+  const download = (filename: string, content: string) => {
+    const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async () => {
+    setBusy(true);
+    try {
+      const { desde, hasta } = calcRango();
+      const tag = `${desde}_a_${hasta}`;
+
+      // CLIENTES (todos siempre, es la "copia de seguridad")
+      const { data: cli } = await supabase
+        .from("clientes")
+        .select("nombre,apellido_1,apellido_2,telefono,email,alias,observaciones,created_at")
+        .order("nombre");
+      const cliRows = (cli ?? []).map((c) => ({
+        Nombre: c.nombre ?? "",
+        Apellido1: c.apellido_1 ?? "",
+        Apellido2: c.apellido_2 ?? "",
+        Telefono: c.telefono ?? "",
+        Email: c.email ?? "",
+        Alias: c.alias ?? "",
+        Observaciones: c.observaciones ?? "",
+        Alta: c.created_at ?? "",
+      }));
+      download(`clientes_${tag}.csv`, toCsv(cliRows));
+
+      // CITAS (rango seleccionado)
+      const { data: cit } = await supabase
+        .from("citas")
+        .select("fecha,hora,nombre,telefono,email,profesional,servicios,total,estado,cobrada,precio_cobrado,observaciones")
+        .gte("fecha", desde)
+        .lte("fecha", hasta)
+        .order("fecha", { ascending: true })
+        .order("hora", { ascending: true });
+      const citRows = (cit ?? []).map((c) => ({
+        Fecha: c.fecha,
+        Hora: c.hora,
+        Cliente: c.nombre,
+        Telefono: c.telefono ?? "",
+        Email: c.email ?? "",
+        Profesional: c.profesional,
+        Tratamientos: (c.servicios ?? []).join(" | "),
+        Total: c.total,
+        Estado: c.estado,
+        Cobrada: c.cobrada ? "Sí" : "No",
+        PrecioCobrado: c.precio_cobrado ?? "",
+        Observaciones: c.observaciones ?? "",
+      }));
+      download(`citas_${tag}.csv`, toCsv(citRows));
+
+      toast.success("Exportación completada", {
+        description: `${cliRows.length} clientes · ${citRows.length} citas`,
+      });
+      onOpenChange(false);
+    } catch (e) {
+      toast.error("No se pudo exportar", { description: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Exportar datos</DialogTitle>
+          <DialogDescription>
+            Descarga una copia de seguridad de tus clientes y del historial de citas en formato CSV (se abre con Excel).
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-primary">Rango de citas</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { k: "dia", l: "Hoy" },
+              { k: "semana", l: "Esta semana" },
+              { k: "mes", l: "Este mes" },
+              { k: "todo", l: "Todo el historial" },
+            ] as const).map((o) => (
+              <button
+                key={o.k}
+                onClick={() => setRango(o.k)}
+                className={cn(
+                  "rounded-xl border px-4 py-3 text-sm transition-colors",
+                  rango === o.k
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-primary/30 hover:border-primary"
+                )}
+              >
+                {o.l}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Se descargarán 2 archivos: <strong>clientes</strong> (todos) y <strong>citas</strong> (rango seleccionado).
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancelar
+          </Button>
+          <Button onClick={handleExport} disabled={busy} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Download className="size-4" /> {busy ? "Generando…" : "Descargar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
