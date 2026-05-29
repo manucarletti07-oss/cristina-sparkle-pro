@@ -81,7 +81,7 @@ function whatsappData(cita: Cita) {
   // Si son 9 dígitos (móvil ES), añadimos prefijo
   const clean = phone.length === 9 ? `34${phone}` : phone;
   const text = `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`;
-  return { phone: clean, text, url: clean ? `https://web.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(text)}` : "" };
+  return { phone: clean, text, url: clean ? `whatsapp://send?phone=${clean}&text=${encodeURIComponent(text)}` : "" };
 }
 
 function Admin() {
