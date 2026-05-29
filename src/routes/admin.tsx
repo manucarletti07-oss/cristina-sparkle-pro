@@ -786,13 +786,30 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
   };
 
   const toCsv = (rows: Record<string, unknown>[]) => {
-    if (rows.length === 0) return "";
-    const headers = Object.keys(rows[0]);
+    const headers = [
+      "Nombre",
+      "Apellido1",
+      "Apellido2",
+      "Telefono",
+      "Email",
+      "Alias",
+      "Observaciones",
+      "Alta",
+      "Fecha",
+      "Hora",
+      "Cliente",
+      "Profesional",
+      "Tratamientos",
+      "Total",
+      "Estado",
+      "Cobrada",
+      "PrecioCobrado",
+    ].filter((h) => rows.length === 0 || rows.some((r) => h in r));
     const esc = (v: unknown) => {
       const s = v == null ? "" : String(v);
       return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    return [headers.join(","), ...rows.map((r) => headers.map((h) => esc(r[h])).join(","))].join("\n");
+    return [headers.join(";"), ...rows.map((r) => headers.map((h) => esc(r[h])).join(";"))].join("\n");
   };
 
   const download = (filename: string, content: string) => {
