@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, X, Shield } from "lucide-react";
+import { Menu, Moon, Shield, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoginModal } from "./LoginModal";
 import { useAuth } from "@/lib/auth-context";
-import { useNavigate } from "@tanstack/react-router";
+import { useTheme } from "@/lib/theme-context";
 
 export function Navbar({ onBookClick }: { onBookClick: () => void }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const { isAuth } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,6 +54,15 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="text-foreground hover:text-primary hover:bg-primary/10"
+              title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+            >
+              {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
+            </Button>
             <Button
               variant="ghost"
               size="sm"
