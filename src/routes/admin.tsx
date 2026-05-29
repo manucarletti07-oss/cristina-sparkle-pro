@@ -951,7 +951,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Exportar datos</DialogTitle>
           <DialogDescription>
-            Descarga una copia de seguridad de tus clientes y del historial de citas en formato Excel.
+            Descarga una copia de seguridad de tus clientes y citas en CSV compatible con Excel.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
@@ -978,7 +978,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            Se descargarán 2 archivos: <strong>clientes</strong> (todos) y <strong>citas</strong> (rango seleccionado).
+            Se descargarán 2 archivos en Descargas: <strong>clientes</strong> (todos) y <strong>citas</strong> (rango seleccionado), con día, mes, semana y hora en el nombre.
           </p>
         </div>
         <DialogFooter>
