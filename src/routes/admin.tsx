@@ -507,7 +507,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
 }
 
 function BonosPanel({ bonos }: { bonos: Bono[] }) {
-  const [selectedCli, setSelectedCli] = useState<string>("__todos");
+  const [selectedCli, setSelectedCli] = useState<string>("");
   const clientes = useMemo(() => {
     const map = new Map<string, { id: string; label: string }>();
     for (const b of bonos) {
@@ -517,7 +517,7 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [bonos]);
   const filtered = useMemo(
-    () => (selectedCli === "__todos" ? bonos : bonos.filter((b) => b.clienteId === selectedCli)),
+    () => (selectedCli ? bonos.filter((b) => b.clienteId === selectedCli) : []),
     [bonos, selectedCli]
   );
   return (
@@ -529,19 +529,22 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
       <div className="mb-5 max-w-sm">
         <Select value={selectedCli} onValueChange={setSelectedCli}>
           <SelectTrigger className="h-11 border-primary/40 bg-background/5 text-background">
-            <SelectValue placeholder="Filtrar por cliente" />
+            <SelectValue placeholder="Selecciona un cliente para ver sus bonos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__todos">Todos los clientes ({clientes.length})</SelectItem>
             {clientes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-      {bonos.length === 0 ? (
+      {!selectedCli ? (
         <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
-          <p className="text-sm text-background/60">No hay bonos para esta búsqueda.</p>
+          <p className="text-sm text-background/60">Selecciona un cliente para ver los bonos que compró.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
+          <p className="text-sm text-background/60">Este cliente no tiene bonos.</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -554,6 +557,7 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
                   <div>
                     <p className="font-display text-xl text-background">{cliente?.nombre ?? "Cliente"}</p>
                     <p className="text-xs text-background/55">{cliente?.telefono ?? "Sin teléfono"}</p>
+                    <p className="text-sm text-primary mt-1">{b.nombre}</p>
                   </div>
                   <Badge className={cn("border text-[10px] uppercase tracking-[0.18em]", b.estado === "agotado" ? "bg-destructive/15 text-destructive border-destructive/40" : "bg-primary/15 text-primary border-primary/40")}>
                     {b.estado === "agotado" ? "Agotado" : "Activo"}
@@ -568,6 +572,7 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
                   <IdCard className="size-3.5 text-primary" /> ID cliente: {b.clienteId.slice(0, 8)}
                 </div>
                 <p className="text-xs text-background/55">Compra: {format(parseISO(b.fechaCompra), "d MMM yyyy", { locale: es })}</p>
+                <p className="text-xs text-background/55">Precio: {b.precio}€</p>
               </div>
             );
           })}
