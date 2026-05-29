@@ -74,16 +74,14 @@ export const Route = createFileRoute("/admin")({
 type Filter = "todas" | "pendiente" | "realizada";
 type Vista = "dia" | "semana" | "mes";
 
-function whatsappUrl(cita: Cita) {
+function whatsappData(cita: Cita) {
   let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
   // Quita prefijo 00
   if (phone.startsWith("00")) phone = phone.slice(2);
   // Si son 9 dígitos (móvil ES), añadimos prefijo
   const clean = phone.length === 9 ? `34${phone}` : phone;
-  const msg = encodeURIComponent(
-    `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`
-  );
-  return clean ? `https://wa.me/${clean}?text=${msg}` : "";
+  const text = `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`;
+  return { phone: clean, text, url: clean ? `https://web.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(text)}` : "" };
 }
 
 function Admin() {
