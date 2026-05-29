@@ -717,9 +717,13 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             type="button"
             variant="outline"
             onClick={() => {
-              const url = whatsappUrl(cita);
-              if (!url) return toast.error("Esta cita no tiene teléfono para WhatsApp");
-              window.open(url, "_blank", "noopener,noreferrer");
+              const { phone, text, url } = whatsappData(cita);
+              if (!phone) return toast.error("Esta cita no tiene teléfono para WhatsApp");
+              const win = window.open(url, "_blank", "noopener,noreferrer");
+              if (!win) {
+                navigator.clipboard?.writeText(text);
+                toast.success("Mensaje copiado", { description: "Abre WhatsApp y pégalo en el chat del cliente." });
+              }
             }}
             className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
           >
