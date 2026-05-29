@@ -832,7 +832,18 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
     setBusy(true);
     try {
       const { desde, hasta } = calcRango();
-      const tag = `${desde}_a_${hasta}`;
+      const now = new Date();
+      const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+      const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+      const getWeek = (d: Date) => {
+        const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        const day = t.getUTCDay() || 7;
+        t.setUTCDate(t.getUTCDate() + 4 - day);
+        const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+        return Math.ceil(((+t - +yearStart) / 86400000 + 1) / 7);
+      };
+      const stamp = `${dias[now.getDay()]}-${String(now.getDate()).padStart(2, "0")}-${meses[now.getMonth()]}-${now.getFullYear()}-semana${getWeek(now)}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
+      const tag = stamp;
 
       // CLIENTES (todos siempre, es la "copia de seguridad")
       const { data: cli } = await supabase
