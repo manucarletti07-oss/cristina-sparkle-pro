@@ -882,7 +882,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
       const tag = stamp;
 
       // CLIENTES (todos siempre, es la "copia de seguridad")
-      const cli = await fetchAllRows((from, to) =>
+      const cli = await fetchAllRows<ClienteExport>((from, to) =>
         supabase
           .from("clientes")
           .select("nombre,apellido_1,apellido_2,telefono,email,alias,observaciones,created_at")
@@ -901,7 +901,7 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
       }));
 
       // CITAS (rango seleccionado)
-      const cit = await fetchAllRows((from, to) =>
+      const cit = await fetchAllRows<CitaExport>((from, to) =>
         supabase
           .from("citas")
           .select("fecha,hora,nombre,telefono,email,profesional,servicios,total,estado,cobrada,precio_cobrado,observaciones")
