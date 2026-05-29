@@ -30,6 +30,7 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
 import { ClienteSearchDropdown } from "@/components/ClienteSearchDropdown";
 import { BuyBonoAdminModal } from "@/components/BuyBonoAdminModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -73,12 +75,15 @@ type Filter = "todas" | "pendiente" | "realizada";
 type Vista = "dia" | "semana" | "mes";
 
 function whatsappUrl(cita: Cita) {
-  const phone = cita.telefono.replace(/[^\d]/g, "");
+  let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
+  // Quita prefijo 00
+  if (phone.startsWith("00")) phone = phone.slice(2);
+  // Si son 9 dígitos (móvil ES), añadimos prefijo
   const clean = phone.length === 9 ? `34${phone}` : phone;
   const msg = encodeURIComponent(
     `Hola, desde Cristina Cebrián le recordamos que hoy tiene cita a las ${cita.hora}.`
   );
-  return `https://wa.me/${clean}?text=${msg}`;
+  return `https://api.whatsapp.com/send?phone=${clean}&text=${msg}`;
 }
 
 function Admin() {
@@ -96,6 +101,7 @@ function Admin() {
   const [ready, setReady] = useState(false);
   const [openNew, setOpenNew] = useState(false);
   const [openBono, setOpenBono] = useState(false);
+  const [openExport, setOpenExport] = useState(false);
   const [editing, setEditing] = useState<Cita | null>(null);
 
   useEffect(() => {
@@ -288,6 +294,13 @@ function Admin() {
               <Gift className="size-4" /> Comprar bono
             </Button>
             <Button
+              onClick={() => setOpenExport(true)}
+              variant="outline"
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+            >
+              <Download className="size-4" /> Exportar datos
+            </Button>
+            <Button
               onClick={handleLogout}
               variant="outline"
               className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
@@ -434,6 +447,7 @@ function Admin() {
       <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
       <EditCitaModal cita={editing} open={!!editing} onOpenChange={(v) => !v && setEditing(null)} />
       <BuyBonoAdminModal open={openBono} onOpenChange={setOpenBono} />
+      <ExportModal open={openExport} onOpenChange={setOpenExport} />
     </div>
   );
 }
@@ -493,7 +507,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
 }
 
 function BonosPanel({ bonos }: { bonos: Bono[] }) {
-  const [selectedCli, setSelectedCli] = useState<string>("__todos");
+  const [selectedCli, setSelectedCli] = useState<string>("");
   const clientes = useMemo(() => {
     const map = new Map<string, { id: string; label: string }>();
     for (const b of bonos) {
@@ -503,7 +517,7 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [bonos]);
   const filtered = useMemo(
-    () => (selectedCli === "__todos" ? bonos : bonos.filter((b) => b.clienteId === selectedCli)),
+    () => (selectedCli ? bonos.filter((b) => b.clienteId === selectedCli) : []),
     [bonos, selectedCli]
   );
   return (
@@ -515,19 +529,22 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
       <div className="mb-5 max-w-sm">
         <Select value={selectedCli} onValueChange={setSelectedCli}>
           <SelectTrigger className="h-11 border-primary/40 bg-background/5 text-background">
-            <SelectValue placeholder="Filtrar por cliente" />
+            <SelectValue placeholder="Selecciona un cliente para ver sus bonos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__todos">Todos los clientes ({clientes.length})</SelectItem>
             {clientes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-      {bonos.length === 0 ? (
+      {!selectedCli ? (
         <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
-          <p className="text-sm text-background/60">No hay bonos para esta búsqueda.</p>
+          <p className="text-sm text-background/60">Selecciona un cliente para ver los bonos que compró.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
+          <p className="text-sm text-background/60">Este cliente no tiene bonos.</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -540,6 +557,7 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
                   <div>
                     <p className="font-display text-xl text-background">{cliente?.nombre ?? "Cliente"}</p>
                     <p className="text-xs text-background/55">{cliente?.telefono ?? "Sin teléfono"}</p>
+                    <p className="text-sm text-primary mt-1">{b.nombre}</p>
                   </div>
                   <Badge className={cn("border text-[10px] uppercase tracking-[0.18em]", b.estado === "agotado" ? "bg-destructive/15 text-destructive border-destructive/40" : "bg-primary/15 text-primary border-primary/40")}>
                     {b.estado === "agotado" ? "Agotado" : "Activo"}
@@ -554,6 +572,7 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
                   <IdCard className="size-3.5 text-primary" /> ID cliente: {b.clienteId.slice(0, 8)}
                 </div>
                 <p className="text-xs text-background/55">Compra: {format(parseISO(b.fechaCompra), "d MMM yyyy", { locale: es })}</p>
+                <p className="text-xs text-background/55">Precio: {b.precio}€</p>
               </div>
             );
           })}
@@ -735,5 +754,157 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
         </div>
       </div>
     </div>
+  );
+}
+
+function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [rango, setRango] = useState<"dia" | "semana" | "mes" | "todo">("mes");
+  const [busy, setBusy] = useState(false);
+
+  const calcRango = () => {
+    const ref = parseISO(today);
+    if (rango === "dia") return { desde: today, hasta: today };
+    if (rango === "semana") {
+      return {
+        desde: format(startOfWeek(ref, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+        hasta: format(endOfWeek(ref, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+      };
+    }
+    if (rango === "mes") {
+      return {
+        desde: format(startOfMonth(ref), "yyyy-MM-dd"),
+        hasta: format(endOfMonth(ref), "yyyy-MM-dd"),
+      };
+    }
+    return { desde: "1900-01-01", hasta: "2999-12-31" };
+  };
+
+  const toCsv = (rows: Record<string, unknown>[]) => {
+    if (rows.length === 0) return "";
+    const headers = Object.keys(rows[0]);
+    const esc = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [headers.join(","), ...rows.map((r) => headers.map((h) => esc(r[h])).join(","))].join("\n");
+  };
+
+  const download = (filename: string, content: string) => {
+    const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async () => {
+    setBusy(true);
+    try {
+      const { desde, hasta } = calcRango();
+      const tag = `${desde}_a_${hasta}`;
+
+      // CLIENTES (todos siempre, es la "copia de seguridad")
+      const { data: cli } = await supabase
+        .from("clientes")
+        .select("nombre,apellido_1,apellido_2,telefono,email,alias,observaciones,created_at")
+        .order("nombre");
+      const cliRows = (cli ?? []).map((c) => ({
+        Nombre: c.nombre ?? "",
+        Apellido1: c.apellido_1 ?? "",
+        Apellido2: c.apellido_2 ?? "",
+        Telefono: c.telefono ?? "",
+        Email: c.email ?? "",
+        Alias: c.alias ?? "",
+        Observaciones: c.observaciones ?? "",
+        Alta: c.created_at ?? "",
+      }));
+      download(`clientes_${tag}.csv`, toCsv(cliRows));
+
+      // CITAS (rango seleccionado)
+      const { data: cit } = await supabase
+        .from("citas")
+        .select("fecha,hora,nombre,telefono,email,profesional,servicios,total,estado,cobrada,precio_cobrado,observaciones")
+        .gte("fecha", desde)
+        .lte("fecha", hasta)
+        .order("fecha", { ascending: true })
+        .order("hora", { ascending: true });
+      const citRows = (cit ?? []).map((c) => ({
+        Fecha: c.fecha,
+        Hora: c.hora,
+        Cliente: c.nombre,
+        Telefono: c.telefono ?? "",
+        Email: c.email ?? "",
+        Profesional: c.profesional,
+        Tratamientos: (c.servicios ?? []).join(" | "),
+        Total: c.total,
+        Estado: c.estado,
+        Cobrada: c.cobrada ? "Sí" : "No",
+        PrecioCobrado: c.precio_cobrado ?? "",
+        Observaciones: c.observaciones ?? "",
+      }));
+      download(`citas_${tag}.csv`, toCsv(citRows));
+
+      toast.success("Exportación completada", {
+        description: `${cliRows.length} clientes · ${citRows.length} citas`,
+      });
+      onOpenChange(false);
+    } catch (e) {
+      toast.error("No se pudo exportar", { description: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Exportar datos</DialogTitle>
+          <DialogDescription>
+            Descarga una copia de seguridad de tus clientes y del historial de citas en formato CSV (se abre con Excel).
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-primary">Rango de citas</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { k: "dia", l: "Hoy" },
+              { k: "semana", l: "Esta semana" },
+              { k: "mes", l: "Este mes" },
+              { k: "todo", l: "Todo el historial" },
+            ] as const).map((o) => (
+              <button
+                key={o.k}
+                onClick={() => setRango(o.k)}
+                className={cn(
+                  "rounded-xl border px-4 py-3 text-sm transition-colors",
+                  rango === o.k
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-primary/30 hover:border-primary"
+                )}
+              >
+                {o.l}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Se descargarán 2 archivos: <strong>clientes</strong> (todos) y <strong>citas</strong> (rango seleccionado).
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancelar
+          </Button>
+          <Button onClick={handleExport} disabled={busy} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Download className="size-4" /> {busy ? "Generando…" : "Descargar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
