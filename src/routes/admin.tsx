@@ -769,15 +769,7 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              const { phone, text, url } = whatsappData(cita);
-              if (!phone) return toast.error("Esta cita no tiene teléfono para WhatsApp");
-              const win = window.open(url, "_blank");
-              if (!win) {
-                navigator.clipboard?.writeText(text);
-                toast.success("Mensaje copiado", { description: "Abre WhatsApp y pégalo en el chat del cliente." });
-              }
-            }}
+            onClick={() => openWhatsAppReminder(cita)}
             className="flex-1 lg:w-full justify-center rounded-full border-whatsapp/30 bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30 font-semibold"
           >
             <MessageCircle className="size-4" /> WhatsApp
