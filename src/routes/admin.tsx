@@ -21,7 +21,9 @@ import {
   IdCard,
   LogOut,
   MessageCircle,
+  Moon,
   Phone,
+  Sun,
   Trash2,
   User as UserIcon,
   Sparkles,
@@ -51,7 +53,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
 import { deleteCita, getBonosPanel, getCitas, marcarCitaCobrada, PROFESIONALES, updateCita, type Cita, type Bono, type Profesional } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingModal } from "@/components/BookingModal";
