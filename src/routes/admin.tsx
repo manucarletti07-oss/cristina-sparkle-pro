@@ -837,7 +837,10 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         Observaciones: c.observaciones ?? "",
         Alta: c.created_at ?? "",
       }));
-      download(`clientes_${tag}.csv`, toCsv(cliRows));
+      downloadExcel(
+        `clientes_${tag}.xls`,
+        toExcelXml({ name: "Clientes", headers: ["Nombre", "Apellido1", "Apellido2", "Telefono", "Email", "Alias", "Observaciones", "Alta"], rows: cliRows })
+      );
 
       // CITAS (rango seleccionado)
       const { data: cit } = await supabase
@@ -861,7 +864,10 @@ function ExportModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         PrecioCobrado: c.precio_cobrado ?? "",
         Observaciones: c.observaciones ?? "",
       }));
-      download(`citas_${tag}.csv`, toCsv(citRows));
+      downloadExcel(
+        `citas_${tag}.xls`,
+        toExcelXml({ name: "Citas", headers: ["Fecha", "Hora", "Cliente", "Telefono", "Email", "Profesional", "Tratamientos", "Total", "Estado", "Cobrada", "PrecioCobrado", "Observaciones"], rows: citRows })
+      );
 
       toast.success("Exportación completada", {
         description: `${cliRows.length} clientes · ${citRows.length} citas`,
