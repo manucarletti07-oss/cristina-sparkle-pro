@@ -102,6 +102,8 @@ type CitaExport = {
   observaciones: string | null;
 };
 
+type ExportSheet = { name: string; headers: string[]; rows: Record<string, unknown>[] };
+
 function whatsappData(cita: Cita) {
   let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
   if (phone.startsWith("00")) phone = phone.slice(2);
@@ -126,6 +128,29 @@ function openWhatsAppReminder(cita: Cita) {
   link.click();
   document.body.removeChild(link);
   toast.success("Abriendo WhatsApp", { description: "Si el navegador no lo abre, el mensaje ya está copiado para pegarlo." });
+}
+
+function csvEscape(value: unknown) {
+  const raw = String(value ?? "");
+  return /[";\n\r]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+}
+
+function toCsv({ headers, rows }: ExportSheet) {
+  const bom = "\ufeff";
+  const lines = [headers.join(";"), ...rows.map((row) => headers.map((header) => csvEscape(row[header])).join(";"))];
+  return `${bom}${lines.join("\n")}`;
+}
+
+function downloadFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function Admin() {
