@@ -36,7 +36,7 @@ import {
   type Bono,
   type FotoCliente,
 } from "@/lib/storage";
-import { buildWhatsAppReminder } from "@/lib/whatsapp";
+import { openWhatsAppReminder } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/admin/cliente/$id")({
   head: () => ({
@@ -153,10 +153,6 @@ function ClienteFicha() {
     [...citas]
       .filter((c) => c.estado === "pendiente" && c.fecha >= today)
       .sort((a, b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`))[0] ?? citas[0];
-  const recordatorioWhatsAppUrl = recordatorioCita
-    ? buildWhatsAppReminder({ telefono: cliente.telefono, fecha: recordatorioCita.fecha, hora: recordatorioCita.hora }).url
-    : "";
-
   return (
     <div className="min-h-screen bg-foreground text-background">
       <header className="border-b border-primary/20 sticky top-0 z-30 backdrop-blur-xl bg-foreground/95">
@@ -282,12 +278,10 @@ function ClienteFicha() {
             <h3 className="font-display text-2xl">Historial de citas ({citas.length})</h3>
             {recordatorioCita && (
               <Button
-                asChild
+                onClick={() => openWhatsAppReminder({ telefono: cliente.telefono, fecha: recordatorioCita.fecha, hora: recordatorioCita.hora })}
                 className="rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30"
               >
-                <a href={recordatorioWhatsAppUrl} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="size-4" /> WhatsApp próxima cita
-                </a>
+                <MessageCircle className="size-4" /> WhatsApp próxima cita
               </Button>
             )}
           </div>

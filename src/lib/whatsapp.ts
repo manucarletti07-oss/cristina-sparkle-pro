@@ -28,13 +28,13 @@ export function buildWhatsAppReminder({ telefono, fecha, hora }: ReminderData) {
   const phone = cleanSpanishPhone(telefono);
   const message = `Hola 😊 Le recordamos su cita en Cristina Cebrián Estética el ${formatSpanishDate(fecha)} a las ${hora}. Si necesita cambiarla, avísenos con antelación. ¡Gracias!`;
   const whatsappWebUrl = phone ? `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}` : "";
-  const url = phone ? `/abrir-whatsapp?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}` : "";
+  const url = whatsappWebUrl;
 
   return { phone, message, url, whatsappWebUrl };
 }
 
 export function openWhatsAppReminder(data: ReminderData) {
-  const { phone, message, url } = buildWhatsAppReminder(data);
+  const { phone, message, whatsappWebUrl } = buildWhatsAppReminder(data);
 
   if (!phone) {
     toast.error("Este cliente no tiene teléfono para WhatsApp");
@@ -42,13 +42,7 @@ export function openWhatsAppReminder(data: ReminderData) {
   }
 
   navigator.clipboard?.writeText(message).catch(() => undefined);
-  const link = document.createElement("a");
-  link.href = url;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  window.open(whatsappWebUrl, "_blank", "noopener,noreferrer");
 
   toast.success("Abriendo WhatsApp", {
     description: "Se abrirá WhatsApp con el mensaje preparado.",
