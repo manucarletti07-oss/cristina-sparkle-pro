@@ -559,6 +559,16 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
 
 function BonosPanel({ bonos }: { bonos: Bono[] }) {
   const [selectedCli, setSelectedCli] = useState<string>("");
+  const handleDelete = async (b: Bono) => {
+    const ok = window.confirm(`¿Eliminar el bono "${b.nombre}"? Esta acción no se puede deshacer.`);
+    if (!ok) return;
+    const res = await deleteBono(b.id);
+    if (!res.ok) {
+      toast.error(res.error ?? "No se pudo eliminar el bono");
+    } else {
+      toast.success("Bono eliminado");
+    }
+  };
   const clientes = useMemo(() => {
     const map = new Map<string, { id: string; label: string }>();
     for (const b of bonos) {
@@ -624,6 +634,14 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
                 </div>
                 <p className="text-xs text-background/55">Compra: {format(parseISO(b.fechaCompra), "d MMM yyyy", { locale: es })}</p>
                 <p className="text-xs text-background/55">Precio: {b.precio}€</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(b)}
+                  className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="size-4" /> Eliminar bono
+                </Button>
               </div>
             );
           })}
