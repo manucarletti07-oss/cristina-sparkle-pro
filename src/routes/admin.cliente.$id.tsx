@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, Save, Upload, Trash2, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, MessageCircle, Save, Upload, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ import {
   type Bono,
   type FotoCliente,
 } from "@/lib/storage";
+import { openWhatsAppReminder } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/admin/cliente/$id")({
   head: () => ({
@@ -268,7 +269,18 @@ function ClienteFicha() {
         </section>
 
         <section>
-          <h3 className="font-display text-2xl mb-4">Historial de citas ({citas.length})</h3>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="font-display text-2xl">Historial de citas ({citas.length})</h3>
+            {citas[0] && (
+              <Button
+                type="button"
+                onClick={() => openWhatsAppReminder({ telefono: cliente.telefono, fecha: citas[0].fecha, hora: citas[0].hora })}
+                className="rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30"
+              >
+                <MessageCircle className="size-4" /> WhatsApp recordatorio
+              </Button>
+            )}
+          </div>
           <div className="glass-dark rounded-2xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-primary/10 text-primary text-[11px] uppercase tracking-[0.2em]">
