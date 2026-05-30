@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as AdminIngresosRouteImport } from './routes/admin.ingresos'
 import { Route as AdminClienteIdRouteImport } from './routes/admin.cliente.$id'
 import { Route as ApiPublicHooksSendRemindersRouteImport } from './routes/api/public/hooks/send-reminders'
 
+const WhatsappRoute = WhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TerminosRoute = TerminosRouteImport.update({
   id: '/terminos',
   path: '/terminos',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/ingresos': typeof AdminIngresosRoute
   '/admin/precios': typeof AdminPreciosRoute
   '/admin/cliente/$id': typeof AdminClienteIdRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/ingresos': typeof AdminIngresosRoute
   '/admin/precios': typeof AdminPreciosRoute
   '/admin/cliente/$id': typeof AdminClienteIdRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/ingresos': typeof AdminIngresosRoute
   '/admin/precios': typeof AdminPreciosRoute
   '/admin/cliente/$id': typeof AdminClienteIdRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/terminos'
+    | '/whatsapp'
     | '/admin/ingresos'
     | '/admin/precios'
     | '/admin/cliente/$id'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/terminos'
+    | '/whatsapp'
     | '/admin/ingresos'
     | '/admin/precios'
     | '/admin/cliente/$id'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/terminos'
+    | '/whatsapp'
     | '/admin/ingresos'
     | '/admin/precios'
     | '/admin/cliente/$id'
@@ -116,11 +128,19 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   TerminosRoute: typeof TerminosRoute
+  WhatsappRoute: typeof WhatsappRoute
   ApiPublicHooksSendRemindersRoute: typeof ApiPublicHooksSendRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/whatsapp': {
+      id: '/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof WhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terminos': {
       id: '/terminos'
       path: '/terminos'
@@ -191,6 +211,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   TerminosRoute: TerminosRoute,
+  WhatsappRoute: WhatsappRoute,
   ApiPublicHooksSendRemindersRoute: ApiPublicHooksSendRemindersRoute,
 }
 export const routeTree = rootRouteImport
