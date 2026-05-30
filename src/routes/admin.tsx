@@ -63,7 +63,7 @@ import { EditCitaModal } from "@/components/EditCitaModal";
 import { ClienteSearchDropdown } from "@/components/ClienteSearchDropdown";
 import { BuyBonoAdminModal } from "@/components/BuyBonoAdminModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { openWhatsAppReminder } from "@/lib/whatsapp";
+import { buildWhatsAppReminder } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -767,12 +767,13 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             <Pencil className="size-4" /> Modificar
           </Button>
           <Button
-            type="button"
+            asChild
             variant="outline"
-            onClick={() => openWhatsAppReminder(cita)}
             className="flex-1 lg:w-full justify-center rounded-full border-whatsapp/30 bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30 font-semibold"
           >
-            <MessageCircle className="size-4" /> WhatsApp
+            <a href={buildWhatsAppReminder(cita).url} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="size-4" /> WhatsApp
+            </a>
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
