@@ -41,7 +41,7 @@ export function openWhatsAppReminder(data: ReminderData) {
   }
 
   navigator.clipboard?.writeText(message).catch(() => undefined);
-  window.open(url, "_blank", "noopener,noreferrer");
+  window.open(url, "_blank");
   toast.success("Abriendo WhatsApp", {
     description: "Si no aparece el mensaje, ya está copiado para pegarlo.",
   });
