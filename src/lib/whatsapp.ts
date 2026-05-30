@@ -27,7 +27,7 @@ function formatSpanishDate(value: string) {
 export function buildWhatsAppReminder({ telefono, fecha, hora }: ReminderData) {
   const phone = cleanSpanishPhone(telefono);
   const message = `Hola, desde Cristina Cebrián Estética le recordamos su cita el ${formatSpanishDate(fecha)} a las ${hora}. Le esperamos.`;
-  const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : "";
+  const url = phone ? `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}` : "";
 
   return { phone, message, url };
 }
@@ -41,25 +41,15 @@ export function openWhatsAppReminder(data: ReminderData) {
   }
 
   navigator.clipboard?.writeText(message).catch(() => undefined);
-  const redirectUrl = new URL("/whatsapp", window.location.origin);
-  redirectUrl.searchParams.set("phone", phone);
-  redirectUrl.searchParams.set("text", message);
-
-  const popup = window.open("about:blank", "_blank");
-  if (popup) {
-    popup.opener = null;
-    popup.location.href = redirectUrl.toString();
-  } else {
-    const link = document.createElement("a");
-    link.href = redirectUrl.toString();
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  }
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 
   toast.success("Abriendo WhatsApp", {
-    description: "Si no aparece, usa la pestaña nueva. El mensaje ya está copiado.",
+    description: "Se abrirá WhatsApp Web con el mensaje preparado.",
   });
 }
