@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AbrirWhatsappRouteImport } from './routes/abrir-whatsapp'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminPreciosRouteImport } from './routes/admin.precios'
 import { Route as AdminIngresosRouteImport } from './routes/admin.ingresos'
@@ -31,6 +32,11 @@ const TerminosRoute = TerminosRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AbrirWhatsappRoute = AbrirWhatsappRouteImport.update({
+  id: '/abrir-whatsapp',
+  path: '/abrir-whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -62,6 +68,7 @@ const ApiPublicHooksSendRemindersRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/abrir-whatsapp': typeof AbrirWhatsappRoute
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
   '/whatsapp': typeof WhatsappRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/abrir-whatsapp': typeof AbrirWhatsappRoute
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
   '/whatsapp': typeof WhatsappRoute
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/abrir-whatsapp': typeof AbrirWhatsappRoute
   '/admin': typeof AdminRouteWithChildren
   '/terminos': typeof TerminosRoute
   '/whatsapp': typeof WhatsappRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/abrir-whatsapp'
     | '/admin'
     | '/terminos'
     | '/whatsapp'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/abrir-whatsapp'
     | '/admin'
     | '/terminos'
     | '/whatsapp'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/abrir-whatsapp'
     | '/admin'
     | '/terminos'
     | '/whatsapp'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AbrirWhatsappRoute: typeof AbrirWhatsappRoute
   AdminRoute: typeof AdminRouteWithChildren
   TerminosRoute: typeof TerminosRoute
   WhatsappRoute: typeof WhatsappRoute
@@ -153,6 +166,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/abrir-whatsapp': {
+      id: '/abrir-whatsapp'
+      path: '/abrir-whatsapp'
+      fullPath: '/abrir-whatsapp'
+      preLoaderRoute: typeof AbrirWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -209,6 +229,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AbrirWhatsappRoute: AbrirWhatsappRoute,
   AdminRoute: AdminRouteWithChildren,
   TerminosRoute: TerminosRoute,
   WhatsappRoute: WhatsappRoute,
@@ -217,3 +238,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
