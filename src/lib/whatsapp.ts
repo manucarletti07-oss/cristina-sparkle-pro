@@ -27,7 +27,7 @@ function formatSpanishDate(value: string) {
 export function buildWhatsAppReminder({ telefono, fecha, hora }: ReminderData) {
   const phone = cleanSpanishPhone(telefono);
   const message = `Hola, desde Cristina Cebrián Estética le recordamos su cita el ${formatSpanishDate(fecha)} a las ${hora}. Le esperamos.`;
-  const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : "";
+  const url = phone ? `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}` : "";
 
   return { phone, message, url };
 }
@@ -41,7 +41,7 @@ export function openWhatsAppReminder(data: ReminderData) {
   }
 
   navigator.clipboard?.writeText(message).catch(() => undefined);
-  const popup = window.open(url, "_blank", "noopener,noreferrer");
+  const popup = window.open(url, "_top");
   if (!popup) {
     const link = document.createElement("a");
     link.href = url;

@@ -285,7 +285,7 @@ function ClienteFicha() {
                 asChild
                 className="rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30"
               >
-                <a href={recordatorioWhatsAppUrl} target="_blank" rel="noopener noreferrer">
+                <a href={recordatorioWhatsAppUrl} target="_top">
                   <MessageCircle className="size-4" /> WhatsApp próxima cita
                 </a>
               </Button>
