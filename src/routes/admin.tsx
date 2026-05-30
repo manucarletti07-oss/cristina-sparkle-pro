@@ -63,6 +63,7 @@ import { EditCitaModal } from "@/components/EditCitaModal";
 import { ClienteSearchDropdown } from "@/components/ClienteSearchDropdown";
 import { BuyBonoAdminModal } from "@/components/BuyBonoAdminModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { openWhatsAppReminder } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -103,32 +104,6 @@ type CitaExport = {
 };
 
 type ExportSheet = { name: string; headers: string[]; rows: Record<string, unknown>[] };
-
-function whatsappData(cita: Cita) {
-  let phone = (cita.telefono ?? "").replace(/[^\d]/g, "");
-  if (phone.startsWith("00")) phone = phone.slice(2);
-  const clean = phone.length === 9 ? `34${phone}` : phone;
-  const text = `Hola ${cita.nombre}, desde Cristina Cebrián le recordamos su cita el ${cita.fecha} a las ${cita.hora}.`;
-  return { phone: clean, text, url: clean ? `whatsapp://send?phone=${clean}&text=${encodeURIComponent(text)}` : "" };
-}
-
-function openWhatsAppReminder(cita: Cita) {
-  const { phone, text, url } = whatsappData(cita);
-  if (!phone) {
-    toast.error("Esta cita no tiene teléfono para WhatsApp");
-    return;
-  }
-
-  navigator.clipboard?.writeText(text).catch(() => undefined);
-  const link = document.createElement("a");
-  link.href = url;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  toast.success("Abriendo WhatsApp", { description: "Si el navegador no lo abre, el mensaje ya está copiado para pegarlo." });
-}
 
 function csvEscape(value: unknown) {
   const raw = String(value ?? "");
