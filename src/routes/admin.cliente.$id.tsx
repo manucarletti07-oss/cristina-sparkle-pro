@@ -148,6 +148,12 @@ function ClienteFicha() {
     load();
   };
 
+  const today = new Date().toISOString().slice(0, 10);
+  const recordatorioCita =
+    [...citas]
+      .filter((c) => c.estado === "pendiente" && c.fecha >= today)
+      .sort((a, b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`))[0] ?? citas[0];
+
   return (
     <div className="min-h-screen bg-foreground text-background">
       <header className="border-b border-primary/20 sticky top-0 z-30 backdrop-blur-xl bg-foreground/95">
@@ -271,13 +277,13 @@ function ClienteFicha() {
         <section>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="font-display text-2xl">Historial de citas ({citas.length})</h3>
-            {citas[0] && (
+            {recordatorioCita && (
               <Button
                 type="button"
-                onClick={() => openWhatsAppReminder({ telefono: cliente.telefono, fecha: citas[0].fecha, hora: citas[0].hora })}
+                onClick={() => openWhatsAppReminder({ telefono: cliente.telefono, fecha: recordatorioCita.fecha, hora: recordatorioCita.hora })}
                 className="rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30"
               >
-                <MessageCircle className="size-4" /> WhatsApp recordatorio
+                <MessageCircle className="size-4" /> WhatsApp próxima cita
               </Button>
             )}
           </div>
