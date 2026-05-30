@@ -479,6 +479,12 @@ export async function getBonosPanel(): Promise<Bono[]> {
   return (data as BonoRow[]).map(toBono);
 }
 
+export async function deleteBono(id: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.from("bonos").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 // ====== SERVICIOS / PRECIOS ======
 export type Servicio = {
   id: string;
