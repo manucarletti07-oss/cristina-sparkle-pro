@@ -258,9 +258,10 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
-  -webkit-text-fill-color: currentColor !important;
+  -webkit-box-shadow: 0 0 0 1000px rgb(20 20 20) inset !important;
+  box-shadow: 0 0 0 1000px rgb(20 20 20) inset !important;
+  -webkit-text-fill-color: #fff !important;
   transition: background-color 5000s ease-in-out 0s !important;
-  caret-color: currentColor !important;
+  caret-color: #fff !important;
 }
 
