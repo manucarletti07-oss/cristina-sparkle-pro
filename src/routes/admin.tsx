@@ -661,10 +661,10 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
   })();
 
   return (
-    <div className={cn(
-      "group relative rounded-2xl border border-primary/15 bg-gradient-to-br from-background/[0.07] to-background/[0.02] backdrop-blur-xl p-6 transition-all hover:border-primary/50 hover:shadow-[0_10px_40px_-10px_rgba(212,175,107,0.35)] hover:-translate-y-0.5",
-      cita.estado === "realizada" && "opacity-60"
-    )}>
+      <div className={cn(
+        "group relative rounded-2xl border border-primary/15 bg-gradient-to-br from-background/[0.07] to-background/[0.02] backdrop-blur-xl p-4 transition-all hover:border-primary/50 hover:shadow-[0_10px_40px_-10px_rgba(212,175,107,0.35)] hover:-translate-y-0.5",
+        cita.estado === "realizada" && "opacity-60"
+      )}>
       {/* Banda lateral de color según estado */}
       <span className={cn(
         "absolute left-0 top-6 bottom-6 w-1 rounded-r-full",
