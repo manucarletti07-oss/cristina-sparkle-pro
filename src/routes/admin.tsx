@@ -667,18 +667,18 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
       )}>
       {/* Banda lateral de color según estado */}
       <span className={cn(
-        "absolute left-0 top-6 bottom-6 w-1 rounded-r-full",
+        "absolute left-0 top-4 bottom-4 w-1 rounded-r-full",
         cita.estado === "realizada" ? "bg-emerald-400/60" : "bg-primary"
       )} />
 
-      <div className="grid lg:grid-cols-[1fr_auto] gap-6">
+      <div className="grid lg:grid-cols-[1fr_auto] gap-4">
         {/* Columna principal */}
-        <div className="space-y-3 pl-3">
+        <div className="space-y-2 pl-2">
           {/* Cabecera: nombre + estado + hora destacada */}
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-display text-2xl text-background leading-tight">
+                <h3 className="font-display text-xl text-background leading-tight">
                   {cita.nombre} {cita.apellido_1} {cita.apellido_2}
                 </h3>
                 {cita.estado === "realizada" ? (
@@ -695,9 +695,9 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             </div>
 
             {/* Hora grande tipo "ticket" */}
-            <div className="flex items-center gap-3 rounded-xl bg-foreground/40 border border-primary/30 px-4 py-2">
+            <div className="flex items-center gap-3 rounded-xl bg-foreground/40 border border-primary/30 px-3 py-1.5">
               <Clock className="size-4 text-primary" />
-              <span className="font-display text-2xl text-background leading-none tracking-wide">{cita.hora}</span>
+              <span className="font-display text-xl text-background leading-none tracking-wide">{cita.hora}</span>
             </div>
           </div>
 
