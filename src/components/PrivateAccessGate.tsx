@@ -58,6 +58,8 @@ export function PrivateAccessGate({ title, sessionKey, onUnlocked }: PrivateAcce
                 className="bg-background/5 border-primary/30 text-background pl-10"
                 placeholder="cristina.cebrian@gmail.com"
                 autoFocus
+                autoComplete="off"
+                name="private-email"
                 required
               />
             </div>
@@ -70,6 +72,8 @@ export function PrivateAccessGate({ title, sessionKey, onUnlocked }: PrivateAcce
               onChange={(e) => setPassword(e.target.value)}
               className="bg-background/5 border-primary/30 text-background"
               placeholder="ingresos123"
+              autoComplete="new-password"
+              name="private-password"
               required
             />
           </div>
