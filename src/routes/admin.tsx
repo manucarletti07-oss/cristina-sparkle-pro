@@ -661,24 +661,24 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
   })();
 
   return (
-    <div className={cn(
-      "group relative rounded-2xl border border-primary/15 bg-gradient-to-br from-background/[0.07] to-background/[0.02] backdrop-blur-xl p-6 transition-all hover:border-primary/50 hover:shadow-[0_10px_40px_-10px_rgba(212,175,107,0.35)] hover:-translate-y-0.5",
-      cita.estado === "realizada" && "opacity-60"
-    )}>
+      <div className={cn(
+        "group relative rounded-2xl border border-primary/15 bg-gradient-to-br from-background/[0.07] to-background/[0.02] backdrop-blur-xl p-4 transition-all hover:border-primary/50 hover:shadow-[0_10px_40px_-10px_rgba(212,175,107,0.35)] hover:-translate-y-0.5",
+        cita.estado === "realizada" && "opacity-60"
+      )}>
       {/* Banda lateral de color según estado */}
       <span className={cn(
-        "absolute left-0 top-6 bottom-6 w-1 rounded-r-full",
+        "absolute left-0 top-4 bottom-4 w-1 rounded-r-full",
         cita.estado === "realizada" ? "bg-emerald-400/60" : "bg-primary"
       )} />
 
-      <div className="grid lg:grid-cols-[1fr_auto] gap-6">
+      <div className="grid lg:grid-cols-[1fr_auto] gap-4">
         {/* Columna principal */}
-        <div className="space-y-3 pl-3">
+        <div className="space-y-2 pl-2">
           {/* Cabecera: nombre + estado + hora destacada */}
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-display text-2xl text-background leading-tight">
+                <h3 className="font-display text-xl text-background leading-tight">
                   {cita.nombre} {cita.apellido_1} {cita.apellido_2}
                 </h3>
                 {cita.estado === "realizada" ? (
@@ -695,9 +695,9 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             </div>
 
             {/* Hora grande tipo "ticket" */}
-            <div className="flex items-center gap-3 rounded-xl bg-foreground/40 border border-primary/30 px-4 py-2">
+            <div className="flex items-center gap-3 rounded-xl bg-foreground/40 border border-primary/30 px-3 py-1.5">
               <Clock className="size-4 text-primary" />
-              <span className="font-display text-2xl text-background leading-none tracking-wide">{cita.hora}</span>
+              <span className="font-display text-xl text-background leading-none tracking-wide">{cita.hora}</span>
             </div>
           </div>
 
@@ -723,7 +723,7 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             {cita.servicios.map((s) => (
               <span
                 key={s}
-                className="text-[11px] px-2.5 py-1 rounded-full bg-primary/10 text-primary/90 border border-primary/25"
+                className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/90 border border-primary/25"
               >
                 {s}
               </span>
@@ -732,14 +732,14 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
 
           {/* Bono badges */}
           {(bono || cita.bonoId) && (
-            <div className="flex flex-wrap gap-2 text-[11px]">
+            <div className="flex flex-wrap gap-2 text-[10px]">
               {cita.bonoId && (
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 font-medium">
                   ✓ Pagada con bono
                 </span>
               )}
               {bono && (
-                <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30 font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-medium">
                   Bono · {bono.sesionesRestantes}/{bono.totalSesiones} sesiones
                 </span>
               )}
@@ -747,57 +747,63 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
           )}
         </div>
 
-        {/* Columna de acciones - botones grandes y visibles */}
-        <div className="flex lg:flex-col gap-2 lg:min-w-[170px] lg:border-l lg:border-primary/15 lg:pl-5">
+        {/* Columna de acciones - botones compactos */}
+        <div className="flex lg:flex-col gap-1.5 lg:min-w-[130px] lg:border-l lg:border-primary/15 lg:pl-3">
           {cita.estado === "pendiente" && (
             <Button
+              size="sm"
               onClick={onDone}
               className="flex-1 lg:w-full justify-center bg-emerald-500 text-white hover:bg-emerald-600 shadow-md font-semibold"
             >
-              <CheckCircle2 className="size-4" /> Realizada
+              <CheckCircle2 className="size-3.5" /> Realizada
             </Button>
           )}
           {!cita.cobrada && (
             <Button
+              size="sm"
               onClick={onCobrar}
               variant="outline"
               className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
             >
-              <Euro className="size-4" /> Cobrar {cita.total}€
+              <Euro className="size-3.5" /> Cobrar {cita.total}€
             </Button>
           )}
           {cita.clienteId && (
             <Button
+              size="sm"
               asChild
               variant="outline"
               className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
             >
               <Link to="/admin/cliente/$id" params={{ id: cita.clienteId }}>
-                <UserIcon className="size-4" /> Ver ficha
+                <UserIcon className="size-3.5" /> Ver ficha
               </Link>
             </Button>
           )}
           <Button
+            size="sm"
             variant="outline"
             onClick={onEdit}
             className="flex-1 lg:w-full justify-center border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground font-medium"
           >
-            <Pencil className="size-4" /> Modificar
+            <Pencil className="size-3.5" /> Modificar
           </Button>
           <Button
+            size="sm"
             variant="outline"
             onClick={() => openWhatsAppReminder(cita)}
             className="flex-1 lg:w-full justify-center rounded-full border-whatsapp/30 bg-whatsapp text-whatsapp-foreground shadow-lg shadow-whatsapp/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-whatsapp/90 hover:shadow-xl hover:shadow-whatsapp/30 font-semibold"
           >
-            <MessageCircle className="size-4" /> WhatsApp
+            <MessageCircle className="size-3.5" /> WhatsApp
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
+                size="sm"
                 variant="outline"
                 className="flex-1 lg:w-full justify-center border-destructive/50 text-destructive bg-transparent hover:bg-destructive hover:text-destructive-foreground font-medium"
               >
-                <Trash2 className="size-4" /> Eliminar
+                <Trash2 className="size-3.5" /> Eliminar
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
