@@ -357,7 +357,6 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                         mode="single"
                         selected={fecha}
                         onSelect={setFecha}
-                        disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
                         locale={es}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
