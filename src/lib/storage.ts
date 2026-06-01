@@ -99,6 +99,7 @@ const toCita = (r: Row): Cita => ({
   nombre: r.nombre,
   apellido_1: r.clientes?.apellido_1 ?? null,
   apellido_2: r.clientes?.apellido_2 ?? null,
+  alias: r.clientes?.alias ?? null,
   telefono: r.telefono,
   email: r.email,
   observaciones: r.observaciones,
