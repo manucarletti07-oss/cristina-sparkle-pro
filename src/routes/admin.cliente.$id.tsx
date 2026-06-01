@@ -25,6 +25,7 @@ import {
   getClienteById,
   getCitasByCliente,
   getBonosByCliente,
+  getTarjetasRegaloByCliente,
   getFotosCliente,
   uploadFotoCliente,
   deleteFotoCliente,
@@ -34,6 +35,7 @@ import {
   type Cliente,
   type Cita,
   type Bono,
+  type TarjetaRegalo,
   type FotoCliente,
 } from "@/lib/storage";
 import { openWhatsAppReminder } from "@/lib/whatsapp";
@@ -55,6 +57,7 @@ function ClienteFicha() {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [citas, setCitas] = useState<Cita[]>([]);
   const [bonos, setBonos] = useState<Bono[]>([]);
+  const [tarjetas, setTarjetas] = useState<TarjetaRegalo[]>([]);
   const [fotos, setFotos] = useState<FotoCliente[]>([]);
   const [obs, setObs] = useState("");
   const [savingObs, setSavingObs] = useState(false);
@@ -75,8 +78,9 @@ function ClienteFicha() {
       getClienteById(id),
       getCitasByCliente(id),
       getBonosByCliente(id),
+      getTarjetasRegaloByCliente(id),
       getFotosCliente(id),
-    ]).then(([c, ci, b, f]) => {
+    ]).then(([c, ci, b, t, f]) => {
       setCliente(c);
       setObs(c?.observaciones ?? "");
       if (c) {
@@ -91,6 +95,7 @@ function ClienteFicha() {
       }
       setCitas(ci);
       setBonos(b);
+      setTarjetas(t);
       setFotos(f);
     });
   };
