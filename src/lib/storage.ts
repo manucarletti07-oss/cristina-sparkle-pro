@@ -136,15 +136,19 @@ export async function getOcupadasPorFecha(
 ): Promise<Map<string, Set<Profesional>>> {
   const { data, error } = await supabase
     .from("citas")
-    .select("hora, profesional")
+    .select("hora, profesional, servicios")
     .eq("fecha", fecha)
     .eq("estado", "pendiente");
   const map = new Map<string, Set<Profesional>>();
   if (error || !data) return map;
-  for (const r of data as { hora: string; profesional: Profesional }[]) {
-    const set = map.get(r.hora) ?? new Set<Profesional>();
-    set.add(r.profesional);
-    map.set(r.hora, set);
+  const duraciones = await getDuracionesServicios();
+  for (const r of data as { hora: string; profesional: Profesional; servicios: string[] }[]) {
+    const slots = expandirSlots(r.hora, r.servicios ?? [], duraciones);
+    for (const h of slots) {
+      const set = map.get(h) ?? new Set<Profesional>();
+      set.add(r.profesional);
+      map.set(h, set);
+    }
   }
   return map;
 }
@@ -162,12 +166,45 @@ export async function getServiciosOcupadosPorFecha(
     .eq("estado", "pendiente");
   const map = new Map<string, Set<string>>();
   if (error || !data) return map;
+  const duraciones = await getDuracionesServicios();
   for (const r of data as { hora: string; servicios: string[] }[]) {
-    const set = map.get(r.hora) ?? new Set<string>();
-    for (const s of r.servicios ?? []) set.add(s);
-    map.set(r.hora, set);
+    const slots = expandirSlots(r.hora, r.servicios ?? [], duraciones);
+    for (const h of slots) {
+      const set = map.get(h) ?? new Set<string>();
+      for (const s of r.servicios ?? []) set.add(s);
+      map.set(h, set);
+    }
   }
   return map;
+}
+
+/** Devuelve mapa nombre_servicio -> duracion_min */
+async function getDuracionesServicios(): Promise<Map<string, number>> {
+  const { data } = await supabase.from("servicios").select("nombre, duracion_min");
+  const map = new Map<string, number>();
+  for (const r of (data ?? []) as { nombre: string; duracion_min: number }[]) {
+    map.set(r.nombre, r.duracion_min ?? 45);
+  }
+  return map;
+}
+
+/** Dado una hora inicial y servicios, devuelve los slots de 15 min ocupados */
+function expandirSlots(
+  horaInicio: string,
+  servicios: string[],
+  duraciones: Map<string, number>
+): string[] {
+  const dur = Math.max(
+    HORARIO.duracionMin,
+    ...servicios.map((s) => duraciones.get(s) ?? 45),
+  );
+  const start = toMin(horaInicio);
+  const end = start + dur;
+  const out: string[] = [];
+  for (let t = start; t < end; t += HORARIO.duracionMin) {
+    out.push(toHHMM(t));
+  }
+  return out;
 }
 
 export async function saveCita(
