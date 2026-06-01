@@ -509,6 +509,7 @@ function Admin() {
         </div>
 
         <BonosPanel bonos={bonosVisibles} />
+        <TarjetasRegaloPanel tarjetas={tarjetasRegalo} />
       </main>
 
       <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
