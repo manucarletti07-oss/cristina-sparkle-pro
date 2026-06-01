@@ -25,6 +25,7 @@ import {
   getClienteById,
   getCitasByCliente,
   getBonosByCliente,
+  getTarjetasRegaloByCliente,
   getFotosCliente,
   uploadFotoCliente,
   deleteFotoCliente,
@@ -34,6 +35,7 @@ import {
   type Cliente,
   type Cita,
   type Bono,
+  type TarjetaRegalo,
   type FotoCliente,
 } from "@/lib/storage";
 import { openWhatsAppReminder } from "@/lib/whatsapp";
@@ -55,6 +57,7 @@ function ClienteFicha() {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [citas, setCitas] = useState<Cita[]>([]);
   const [bonos, setBonos] = useState<Bono[]>([]);
+  const [tarjetas, setTarjetas] = useState<TarjetaRegalo[]>([]);
   const [fotos, setFotos] = useState<FotoCliente[]>([]);
   const [obs, setObs] = useState("");
   const [savingObs, setSavingObs] = useState(false);
@@ -75,8 +78,9 @@ function ClienteFicha() {
       getClienteById(id),
       getCitasByCliente(id),
       getBonosByCliente(id),
+      getTarjetasRegaloByCliente(id),
       getFotosCliente(id),
-    ]).then(([c, ci, b, f]) => {
+    ]).then(([c, ci, b, t, f]) => {
       setCliente(c);
       setObs(c?.observaciones ?? "");
       if (c) {
@@ -91,6 +95,7 @@ function ClienteFicha() {
       }
       setCitas(ci);
       setBonos(b);
+      setTarjetas(t);
       setFotos(f);
     });
   };
@@ -265,6 +270,29 @@ function ClienteFicha() {
                     </div>
                     <Badge className={b.estado === "agotado" ? "bg-destructive/15 text-destructive border-destructive/40" : "bg-primary/15 text-primary border-primary/40"}>
                       {b.sesionesRestantes}/{b.totalSesiones}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="glass-dark rounded-2xl p-5">
+            <h3 className="font-display text-xl mb-3">Tarjetas regalo del cliente</h3>
+            {tarjetas.length === 0 ? (
+              <p className="text-sm text-background/50">Sin tarjetas regalo.</p>
+            ) : (
+              <div className="space-y-2">
+                {tarjetas.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between text-sm border-b border-primary/10 py-2 gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{t.codigo} · {t.precio}€</p>
+                      <p className="text-xs text-background/50 truncate">
+                        {(t.servicios_nombres ?? []).join(", ")} · {format(parseISO(t.fecha_compra), "d MMM yyyy", { locale: es })}
+                      </p>
+                    </div>
+                    <Badge className={t.estado === "canjeada" ? "bg-emerald-500/15 text-emerald-300 border-emerald-400/40" : "bg-primary/15 text-primary border-primary/40"}>
+                      {t.estado}
                     </Badge>
                   </div>
                 ))}
