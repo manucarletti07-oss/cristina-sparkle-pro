@@ -837,13 +837,23 @@ export async function getTarjetasRegalo(): Promise<TarjetaRegalo[]> {
 export async function getTarjetasRegaloPanel(): Promise<TarjetaRegalo[]> {
   const { data, error } = await supabase
     .from("tarjetas_regalo")
-    .select("*, clientes(id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones)")
+    .select("*")
     .order("fecha_compra", { ascending: false });
   if (error) {
     console.error(error);
     return [];
   }
-  return (data ?? []).map((r: any) => ({
+  const rows = data ?? [];
+  const ids = Array.from(new Set(rows.map((r: any) => r.comprador_cliente_id).filter(Boolean)));
+  let clientesMap: Record<string, any> = {};
+  if (ids.length) {
+    const { data: cls } = await supabase
+      .from("clientes")
+      .select("id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones")
+      .in("id", ids);
+    clientesMap = Object.fromEntries((cls ?? []).map((c: any) => [c.id, c]));
+  }
+  return rows.map((r: any) => ({
     id: r.id,
     comprador_cliente_id: r.comprador_cliente_id,
     servicios_ids: r.servicios_ids ?? [],
@@ -854,8 +864,18 @@ export async function getTarjetasRegaloPanel(): Promise<TarjetaRegalo[]> {
     fecha_compra: r.fecha_compra,
     fecha_canje: r.fecha_canje,
     observaciones: r.observaciones,
-    cliente: r.clientes ?? null,
+    cliente: clientesMap[r.comprador_cliente_id] ?? null,
   })) as TarjetaRegalo[];
+}
+
+export async function getTarjetasRegaloByCliente(clienteId: string): Promise<TarjetaRegalo[]> {
+  const { data, error } = await supabase
+    .from("tarjetas_regalo")
+    .select("*")
+    .eq("comprador_cliente_id", clienteId)
+    .order("fecha_compra", { ascending: false });
+  if (error) return [];
+  return (data ?? []) as TarjetaRegalo[];
 }
 
 /** Tarjeta regalo pendiente del cliente identificado por teléfono. */
