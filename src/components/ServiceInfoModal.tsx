@@ -46,6 +46,11 @@ export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props
 
         <div className="space-y-3 pt-2">
           <ul className="space-y-2">
+            {data.treatments.length === 0 && (
+              <li className="rounded-xl border border-primary/15 bg-background/40 px-4 py-3 text-xs text-muted-foreground">
+                No hay tratamientos disponibles en esta categoría.
+              </li>
+            )}
             {data.treatments.map((t) => (
               <li
                 key={t.nombre}
