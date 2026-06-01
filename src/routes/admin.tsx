@@ -62,6 +62,7 @@ import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
 import { ClienteSearchDropdown } from "@/components/ClienteSearchDropdown";
 import { BuyBonoAdminModal } from "@/components/BuyBonoAdminModal";
+import { BuyTarjetaRegaloModal } from "@/components/BuyTarjetaRegaloModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { openWhatsAppReminder } from "@/lib/whatsapp";
 
