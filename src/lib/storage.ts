@@ -785,6 +785,7 @@ export type TarjetaRegalo = {
   fecha_compra: string;
   fecha_canje: string | null;
   observaciones: string | null;
+  cliente?: Cliente | null;
 };
 
 function generarCodigoTarjeta() {
@@ -833,6 +834,30 @@ export async function getTarjetasRegalo(): Promise<TarjetaRegalo[]> {
   return (data ?? []) as TarjetaRegalo[];
 }
 
+export async function getTarjetasRegaloPanel(): Promise<TarjetaRegalo[]> {
+  const { data, error } = await supabase
+    .from("tarjetas_regalo")
+    .select("*, clientes(id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones)")
+    .order("fecha_compra", { ascending: false });
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    comprador_cliente_id: r.comprador_cliente_id,
+    servicios_ids: r.servicios_ids ?? [],
+    servicios_nombres: r.servicios_nombres ?? [],
+    precio: Number(r.precio),
+    codigo: r.codigo,
+    estado: r.estado,
+    fecha_compra: r.fecha_compra,
+    fecha_canje: r.fecha_canje,
+    observaciones: r.observaciones,
+    cliente: r.clientes ?? null,
+  })) as TarjetaRegalo[];
+}
+
 /** Tarjeta regalo pendiente del cliente identificado por teléfono. */
 export async function getTarjetaRegaloActivaByTelefono(telefono: string): Promise<TarjetaRegalo | null> {
   const tel = telefono.trim();
@@ -861,4 +886,10 @@ export async function canjearTarjetaRegalo(id: string) {
     .eq("id", id);
   if (error) return { ok: false as const, error: error.message };
   return { ok: true as const };
+}
+
+export async function deleteTarjetaRegalo(id: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.from("tarjetas_regalo").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
