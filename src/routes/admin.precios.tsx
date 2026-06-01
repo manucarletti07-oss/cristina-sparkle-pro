@@ -51,15 +51,17 @@ function Precios() {
   const [unlocked, setUnlocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBonoId, setEditingBonoId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string }>({
+  const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string; duracion: string }>({
     nombre: "",
     categoria: "",
     precio: "",
+    duracion: "",
   });
-  const [nuevo, setNuevo] = useState<{ nombre: string; categoria: string; precio: string }>({
+  const [nuevo, setNuevo] = useState<{ nombre: string; categoria: string; precio: string; duracion: string }>({
     nombre: "",
     categoria: "",
     precio: "",
+    duracion: "",
   });
   const [draftBono, setDraftBono] = useState<{ nombre: string; sesiones: string; precio: string }>({
     nombre: "",
@@ -85,28 +87,31 @@ function Precios() {
 
   const startEdit = (s: Servicio) => {
     setEditingId(s.id);
-    setDraft({ nombre: s.nombre, categoria: s.categoria, precio: String(s.precio) });
+    setDraft({ nombre: s.nombre, categoria: s.categoria, precio: String(s.precio), duracion: String(s.duracion_min ?? 45) });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setDraft({ nombre: "", categoria: "", precio: "" });
+    setDraft({ nombre: "", categoria: "", precio: "", duracion: "" });
   };
 
   const saveEdit = async (s: Servicio) => {
     const precio = Number(draft.precio);
+    const duracion_min = Number(draft.duracion);
     if (!draft.nombre.trim()) return toast.error("Nombre obligatorio");
     if (!draft.categoria.trim()) return toast.error("Categoría obligatoria");
     if (Number.isNaN(precio) || precio < 0) return toast.error("Precio inválido");
+    if (!Number.isInteger(duracion_min) || duracion_min <= 0) return toast.error("Duración inválida");
     const res = await updateServicio(s.id, {
       nombre: draft.nombre.trim(),
       categoria: draft.categoria.trim().toLowerCase(),
       precio,
+      duracion_min,
     });
     if (!res.ok) return toast.error(res.error);
     toast.success("Servicio actualizado");
     setServicios((arr) =>
-      arr.map((x) => (x.id === s.id ? { ...x, nombre: draft.nombre.trim(), categoria: draft.categoria.trim().toLowerCase(), precio } : x))
+      arr.map((x) => (x.id === s.id ? { ...x, nombre: draft.nombre.trim(), categoria: draft.categoria.trim().toLowerCase(), precio, duracion_min } : x))
     );
     cancelEdit();
   };
@@ -120,18 +125,21 @@ function Precios() {
 
   const create = async () => {
     const precio = Number(nuevo.precio);
+    const duracion_min = Number(nuevo.duracion);
     if (!nuevo.nombre.trim()) return toast.error("Nombre obligatorio");
     if (!nuevo.categoria.trim()) return toast.error("Categoría obligatoria");
     if (Number.isNaN(precio) || precio < 0) return toast.error("Precio inválido");
+    if (!Number.isInteger(duracion_min) || duracion_min <= 0) return toast.error("Duración inválida");
     const res = await createServicio({
       nombre: nuevo.nombre,
       categoria: nuevo.categoria,
       precio,
+      duracion_min,
     });
     if (!res.ok) return toast.error(res.error);
     toast.success("Servicio creado");
     setServicios((arr) => [...arr, res.servicio]);
-    setNuevo({ nombre: "", categoria: "", precio: "" });
+    setNuevo({ nombre: "", categoria: "", precio: "", duracion: "" });
   };
 
   const startEditBono = (b: BonoCatalogo) => {
@@ -235,7 +243,7 @@ function Precios() {
           <h2 className="font-display text-xl flex items-center gap-2">
             <Plus className="size-5 text-primary" /> Añadir servicio
           </h2>
-          <div className="grid sm:grid-cols-[1fr_1fr_140px_auto] gap-3 items-end">
+          <div className="grid sm:grid-cols-[1fr_1fr_120px_120px_auto] gap-3 items-end">
             <div className="space-y-1">
               <Label className="text-background/70 text-[10px] uppercase tracking-[0.2em]">Nombre</Label>
               <Input
@@ -264,6 +272,17 @@ function Precios() {
                 className="bg-background/5 border-primary/30 text-background"
               />
             </div>
+            <div className="space-y-1">
+              <Label className="text-background/70 text-[10px] uppercase tracking-[0.2em]">Duración (min)</Label>
+              <Input
+                type="number"
+                min={1}
+                value={nuevo.duracion}
+                onChange={(e) => setNuevo((p) => ({ ...p, duracion: e.target.value }))}
+                placeholder="45"
+                className="bg-background/5 border-primary/30 text-background"
+              />
+            </div>
             <Button onClick={create} className="bg-primary text-primary-foreground hover:bg-primary/90 h-10">
               <Plus className="size-4" /> Crear
             </Button>
@@ -280,6 +299,7 @@ function Precios() {
                     <th className="text-left p-3">Servicio</th>
                     <th className="text-left p-3 w-[160px]">Categoría</th>
                     <th className="text-left p-3 w-[160px]">Precio (€)</th>
+                    <th className="text-left p-3 w-[140px]">Duración (min)</th>
                     <th className="text-right p-3 w-[200px]"></th>
                   </tr>
                 </thead>
@@ -321,6 +341,19 @@ function Precios() {
                             />
                           ) : (
                             <span>{s.precio}€</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              min={1}
+                              value={draft.duracion}
+                              onChange={(e) => setDraft((p) => ({ ...p, duracion: e.target.value }))}
+                              className="bg-background/5 border-primary/30 text-background h-9"
+                            />
+                          ) : (
+                            <span>{s.duracion_min} min</span>
                           )}
                         </td>
                         <td className="p-3 text-right">
