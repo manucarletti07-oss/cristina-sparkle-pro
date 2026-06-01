@@ -425,6 +425,11 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                   </div>
                 ) : (
                   <div className="divide-y divide-primary/15 rounded-xl border border-primary/15 bg-background/40">
+                    {data!.treatments.length === 0 && (
+                      <div className="px-4 py-3 text-xs text-muted-foreground">
+                        No hay tratamientos en esta categoría. Añádelos desde Precios.
+                      </div>
+                    )}
                     {data!.treatments.map((t) => {
                       const checked = selected.includes(t.nombre);
                       return (
