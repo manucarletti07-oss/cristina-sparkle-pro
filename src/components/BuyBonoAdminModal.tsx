@@ -160,14 +160,14 @@ export function BuyBonoAdminModal({ open, onOpenChange }: Props) {
                             onClick={() => pick(c)}
                             className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-primary/10 border-b border-primary/10 last:border-0"
                           >
-                            <UserIcon className="size-3.5 text-primary" />
+                            <UserIcon className="size-3.5 text-primary shrink-0" />
                             <span className="flex-1 min-w-0 text-sm truncate">{full || "Sin nombre"}</span>
                             {c.alias && (
-                              <span className="text-[10px] uppercase tracking-[0.15em] text-primary/80 border border-primary/30 rounded-full px-1.5 truncate max-w-[80px]">
+                              <span className="text-[11px] uppercase tracking-[0.08em] text-primary/90 border border-primary/30 rounded-full px-2 py-0.5 whitespace-nowrap">
                                 {c.alias}
                               </span>
                             )}
-                            <span className="text-xs text-muted-foreground truncate">{c.telefono ?? ""}</span>
+                            <span className="text-xs text-muted-foreground truncate shrink-0">{c.telefono ?? ""}</span>
                           </button>
                         );
                       })}
