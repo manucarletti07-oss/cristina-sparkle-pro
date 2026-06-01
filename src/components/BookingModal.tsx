@@ -20,10 +20,13 @@ import {
   PROFESIONALES,
   saveCita,
   getBonoActivoByTelefono,
+  getTarjetaRegaloActivaByTelefono,
+  canjearTarjetaRegalo,
   getServicios,
   searchClientes,
   type Cliente,
   type Bono,
+  type TarjetaRegalo,
   type Profesional,
 } from "@/lib/storage";
 
@@ -60,6 +63,8 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
   const [serviciosOcupados, setServiciosOcupados] = useState<Map<string, Set<string>>>(new Map());
   const [bonoActivo, setBonoActivo] = useState<Bono | null>(null);
   const [usarBono, setUsarBono] = useState(false);
+  const [tarjetaActiva, setTarjetaActiva] = useState<TarjetaRegalo | null>(null);
+  const [usarTarjeta, setUsarTarjeta] = useState(false);
   const [serviciosDb, setServiciosDb] = useState<Treatment[]>([]);
   const [clienteSugs, setClienteSugs] = useState<Cliente[]>([]);
   const [showSugs, setShowSugs] = useState(false);
@@ -85,6 +90,8 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       setProfesional("cristina");
       setBonoActivo(null);
       setUsarBono(false);
+      setTarjetaActiva(null);
+      setUsarTarjeta(false);
       setClienteSugs([]);
       setShowSugs(false);
       setClienteId(null);
@@ -134,11 +141,16 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
     if (t.length < 6) {
       setBonoActivo(null);
       setUsarBono(false);
+      setTarjetaActiva(null);
+      setUsarTarjeta(false);
       return;
     }
     let cancel = false;
     getBonoActivoByTelefono(t).then((b) => {
       if (!cancel) setBonoActivo(b);
+    });
+    getTarjetaRegaloActivaByTelefono(t).then((tr) => {
+      if (!cancel) setTarjetaActiva(tr);
     });
     return () => { cancel = true; };
   }, [telefono]);
@@ -183,7 +195,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       fecha: fechaIso,
       hora,
       profesional,
-      total: usarBono && bonoActivo ? 0 : total,
+      total: (usarBono && bonoActivo) || (usarTarjeta && tarjetaActiva) ? 0 : total,
       bonoId: usarBono && bonoActivo ? bonoActivo.id : null,
     });
     if (!res.ok) {
@@ -191,6 +203,9 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       return toast.error(res.error, {
         description: "Por favor, elige otro horario disponible.",
       });
+    }
+    if (usarTarjeta && tarjetaActiva) {
+      await canjearTarjetaRegalo(tarjetaActiva.id);
     }
     setStage("done");
     toast.success("Cita confirmada", {
@@ -455,9 +470,27 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                   <label className="flex items-center gap-2 cursor-pointer text-sm">
                     <Checkbox
                       checked={usarBono}
-                      onCheckedChange={(v) => setUsarBono(!!v)}
+                      onCheckedChange={(v) => { setUsarBono(!!v); if (v) setUsarTarjeta(false); }}
                     />
                     Usar 1 sesión del bono en esta cita
+                  </label>
+                </div>
+              )}
+
+              {tarjetaActiva && (
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">
+                    Tarjeta regalo disponible
+                  </p>
+                  <p className="text-sm text-foreground">
+                    {tarjetaActiva.codigo} · {tarjetaActiva.servicios_nombres.join(", ")}
+                  </p>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={usarTarjeta}
+                      onCheckedChange={(v) => { setUsarTarjeta(!!v); if (v) setUsarBono(false); }}
+                    />
+                    Pagar esta cita con la tarjeta regalo
                   </label>
                 </div>
               )}
@@ -465,7 +498,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
               <div className="flex items-center justify-between bg-foreground text-background rounded-xl px-5 py-4">
                 <span className="text-xs uppercase tracking-[0.25em] text-primary">Total</span>
                 <span className="font-display text-2xl">
-                  {usarBono && bonoActivo ? "Bono" : `${total}€`}
+                  {usarBono && bonoActivo ? "Bono" : usarTarjeta && tarjetaActiva ? "Tarjeta regalo" : `${total}€`}
                 </span>
               </div>
 
