@@ -26,7 +26,7 @@ export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props
     if (open) getServicios().then((items) => setServiciosDb(items.map((s) => ({ nombre: s.nombre, precio: s.precio, categoria: s.categoria }))));
   }, [open]);
   const dbTreatments = category ? serviciosDb.filter((s) => s.categoria === category) : [];
-  const data = category ? { ...SERVICIOS[category], treatments: dbTreatments.length ? dbTreatments : SERVICIOS[category].treatments } : null;
+  const data = category ? { ...SERVICIOS[category], treatments: dbTreatments } : null;
   if (!data || !category) return null;
 
   return (
