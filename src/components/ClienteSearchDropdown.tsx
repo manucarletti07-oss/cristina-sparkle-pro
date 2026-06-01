@@ -18,7 +18,7 @@ export function ClienteSearchDropdown() {
     const term = q.trim();
     setLoading(true);
     const t = setTimeout(async () => {
-      const r = await searchClientesConHistorial(term, 12);
+      const r = await searchClientesConHistorial(term, 500);
       setResults(r);
       setLoading(false);
       setOpen(true);
