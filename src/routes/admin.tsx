@@ -669,6 +669,113 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
   );
 }
 
+function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
+  const [selectedCli, setSelectedCli] = useState<string>("");
+  const handleDelete = async (t: TarjetaRegalo) => {
+    const ok = window.confirm(`¿Eliminar la tarjeta regalo "${t.codigo}"? Esta acción no se puede deshacer.`);
+    if (!ok) return;
+    const res = await deleteTarjetaRegalo(t.id);
+    if (!res.ok) {
+      toast.error(res.error ?? "No se pudo eliminar la tarjeta regalo");
+    } else {
+      toast.success("Tarjeta regalo eliminada");
+    }
+  };
+  const clientes = useMemo(() => {
+    const map = new Map<string, { id: string; label: string }>();
+    for (const t of tarjetas) {
+      const label = [t.cliente?.nombre, t.cliente?.apellido_1].filter(Boolean).join(" ") || t.comprador_cliente_id.slice(0, 8);
+      if (!map.has(t.comprador_cliente_id)) map.set(t.comprador_cliente_id, { id: t.comprador_cliente_id, label });
+    }
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [tarjetas]);
+  const filtered = useMemo(
+    () => (selectedCli ? tarjetas.filter((t) => t.comprador_cliente_id === selectedCli) : []),
+    [tarjetas, selectedCli]
+  );
+  return (
+    <section className="mt-12">
+      <h3 className="font-display text-2xl text-background mb-4 flex items-center gap-2">
+        <Gift className="size-5 text-primary" /> Tarjetas Regalo compradas
+        <span className="text-xs uppercase tracking-[0.2em] text-primary/70">({tarjetas.length})</span>
+      </h3>
+      <div className="mb-5 max-w-sm">
+        <Select value={selectedCli} onValueChange={setSelectedCli}>
+          <SelectTrigger className="h-11 border-primary/40 bg-background/5 text-background">
+            <SelectValue placeholder="Selecciona un cliente para ver sus tarjetas regalo" />
+          </SelectTrigger>
+          <SelectContent>
+            {clientes.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {!selectedCli ? (
+        <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
+          <p className="text-sm text-background/60">Selecciona un cliente para ver las tarjetas regalo que compró.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="border border-dashed border-primary/20 rounded-2xl p-8 text-center">
+          <p className="text-sm text-background/60">Este cliente no tiene tarjetas regalo.</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtered.map((t) => {
+            const cliente = t.cliente;
+            return (
+              <div key={t.id} className="glass-dark rounded-2xl p-5 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-display text-xl text-background">{cliente?.nombre ?? "Cliente"}</p>
+                    <p className="text-xs text-background/55">{cliente?.telefono ?? "Sin teléfono"}</p>
+                    <p className="text-sm text-primary mt-1">{t.codigo}</p>
+                  </div>
+                  <Badge className={cn("border text-[10px] uppercase tracking-[0.18em]", t.estado === "canjeada" ? "bg-emerald-500/15 text-emerald-300 border-emerald-400/40" : "bg-primary/15 text-primary border-primary/40")}>
+                    {t.estado === "canjeada" ? "Canjeada" : "Pendiente"}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-primary">Tratamientos</p>
+                  <div className="flex flex-wrap gap-1">
+                    {t.servicios_nombres.map((s) => (
+                      <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/90 border border-primary/25">{s}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="rounded-xl bg-background/5 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-primary">Precio</p>
+                    <p className="font-display text-2xl text-background">{t.precio}€</p>
+                  </div>
+                  <div className="rounded-xl bg-background/5 p-3">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-primary">Compra</p>
+                    <p className="font-display text-lg text-background">{format(parseISO(t.fecha_compra), "d MMM yyyy", { locale: es })}</p>
+                  </div>
+                </div>
+                {t.fecha_canje && (
+                  <p className="text-xs text-background/55">Canje: {format(parseISO(t.fecha_canje), "d MMM yyyy", { locale: es })}</p>
+                )}
+                {t.observaciones && (
+                  <p className="text-xs text-background/60">{t.observaciones}</p>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(t)}
+                  className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="size-4" /> Eliminar tarjeta regalo
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Cita; bono: Bono | null; onDone: () => void; onDelete: () => void; onEdit: () => void; onCobrar: () => void }) {
   const fechaFmt = (() => {
     try {
