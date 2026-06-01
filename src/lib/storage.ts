@@ -45,6 +45,7 @@ export type Cita = {
   nombre: string;
   apellido_1: string | null;
   apellido_2: string | null;
+  alias: string | null;
   telefono: string;
   email?: string | null;
   observaciones?: string | null;
