@@ -785,6 +785,7 @@ export type TarjetaRegalo = {
   fecha_compra: string;
   fecha_canje: string | null;
   observaciones: string | null;
+  cliente?: Cliente | null;
 };
 
 function generarCodigoTarjeta() {
