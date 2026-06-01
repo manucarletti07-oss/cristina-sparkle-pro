@@ -62,6 +62,7 @@ import { BookingModal } from "@/components/BookingModal";
 import { EditCitaModal } from "@/components/EditCitaModal";
 import { ClienteSearchDropdown } from "@/components/ClienteSearchDropdown";
 import { BuyBonoAdminModal } from "@/components/BuyBonoAdminModal";
+import { BuyTarjetaRegaloModal } from "@/components/BuyTarjetaRegaloModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { openWhatsAppReminder } from "@/lib/whatsapp";
 
@@ -144,6 +145,7 @@ function Admin() {
   const [ready, setReady] = useState(false);
   const [openNew, setOpenNew] = useState(false);
   const [openBono, setOpenBono] = useState(false);
+  const [openTarjeta, setOpenTarjeta] = useState(false);
   const [openExport, setOpenExport] = useState(false);
   const [editing, setEditing] = useState<Cita | null>(null);
 
@@ -337,6 +339,13 @@ function Admin() {
               <Gift className="size-4" /> Comprar bono
             </Button>
             <Button
+              onClick={() => setOpenTarjeta(true)}
+              variant="outline"
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+            >
+              <Gift className="size-4" /> Comprar tarjeta regalo
+            </Button>
+            <Button
               onClick={() => setOpenExport(true)}
               variant="outline"
               className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
@@ -498,6 +507,7 @@ function Admin() {
       <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
       <EditCitaModal cita={editing} open={!!editing} onOpenChange={(v) => !v && setEditing(null)} />
       <BuyBonoAdminModal open={openBono} onOpenChange={setOpenBono} />
+      <BuyTarjetaRegaloModal open={openTarjeta} onOpenChange={setOpenTarjeta} />
       <ExportModal open={openExport} onOpenChange={setOpenExport} />
     </div>
   );

@@ -286,6 +286,48 @@ export type Database = {
         }
         Relationships: []
       }
+      tarjetas_regalo: {
+        Row: {
+          codigo: string
+          comprador_cliente_id: string
+          created_at: string
+          estado: string
+          fecha_canje: string | null
+          fecha_compra: string
+          id: string
+          observaciones: string | null
+          precio: number
+          servicios_ids: string[]
+          servicios_nombres: string[]
+        }
+        Insert: {
+          codigo: string
+          comprador_cliente_id: string
+          created_at?: string
+          estado?: string
+          fecha_canje?: string | null
+          fecha_compra?: string
+          id?: string
+          observaciones?: string | null
+          precio?: number
+          servicios_ids?: string[]
+          servicios_nombres?: string[]
+        }
+        Update: {
+          codigo?: string
+          comprador_cliente_id?: string
+          created_at?: string
+          estado?: string
+          fecha_canje?: string | null
+          fecha_compra?: string
+          id?: string
+          observaciones?: string | null
+          precio?: number
+          servicios_ids?: string[]
+          servicios_nombres?: string[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
