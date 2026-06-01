@@ -832,3 +832,33 @@ export async function getTarjetasRegalo(): Promise<TarjetaRegalo[]> {
   if (error) return [];
   return (data ?? []) as TarjetaRegalo[];
 }
+
+/** Tarjeta regalo pendiente del cliente identificado por teléfono. */
+export async function getTarjetaRegaloActivaByTelefono(telefono: string): Promise<TarjetaRegalo | null> {
+  const tel = telefono.trim();
+  if (!tel) return null;
+  const { data: cli } = await supabase
+    .from("clientes")
+    .select("id")
+    .eq("telefono", tel)
+    .maybeSingle();
+  if (!cli) return null;
+  const { data } = await supabase
+    .from("tarjetas_regalo")
+    .select("*")
+    .eq("comprador_cliente_id", cli.id)
+    .eq("estado", "pendiente")
+    .order("fecha_compra", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as TarjetaRegalo) ?? null;
+}
+
+export async function canjearTarjetaRegalo(id: string) {
+  const { error } = await supabase
+    .from("tarjetas_regalo")
+    .update({ estado: "canjeada", fecha_canje: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
