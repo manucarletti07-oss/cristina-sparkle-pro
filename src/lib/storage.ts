@@ -136,19 +136,13 @@ export async function getOcupadasPorFecha(
 ): Promise<Map<string, Set<Profesional>>> {
   const { data, error } = await supabase
     .from("citas")
-    .select("hora, profesional")
+    .select("hora, profesional, servicios")
     .eq("fecha", fecha)
     .eq("estado", "pendiente");
   const map = new Map<string, Set<Profesional>>();
   if (error || !data) return map;
-  // Recuperar también servicios para calcular duración de cada cita
-  const { data: dataFull } = await supabase
-    .from("citas")
-    .select("hora, profesional, servicios")
-    .eq("fecha", fecha)
-    .eq("estado", "pendiente");
   const duraciones = await getDuracionesServicios();
-  for (const r of (dataFull ?? []) as { hora: string; profesional: Profesional; servicios: string[] }[]) {
+  for (const r of data as { hora: string; profesional: Profesional; servicios: string[] }[]) {
     const slots = expandirSlots(r.hora, r.servicios ?? [], duraciones);
     for (const h of slots) {
       const set = map.get(h) ?? new Set<Profesional>();
