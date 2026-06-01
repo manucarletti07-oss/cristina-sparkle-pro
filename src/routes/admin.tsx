@@ -136,6 +136,7 @@ function Admin() {
   const location = useLocation();
   const [citas, setCitas] = useState<Cita[]>([]);
   const [bonos, setBonos] = useState<Bono[]>([]);
+  const [tarjetasRegalo, setTarjetasRegalo] = useState<TarjetaRegalo[]>([]);
   const [filter, setFilter] = useState<Filter>("todas");
   const [profesionalQuery, setProfesionalQuery] = useState<"todas" | Profesional>("todas");
   const today = new Date().toISOString().slice(0, 10);
