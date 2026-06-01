@@ -599,6 +599,11 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
     () => (selectedCli ? bonos.filter((b) => b.clienteId === selectedCli) : []),
     [bonos, selectedCli]
   );
+  useEffect(() => {
+    if (selectedCli && !clientes.some((c) => c.id === selectedCli)) {
+      setSelectedCli("");
+    }
+  }, [clientes, selectedCli]);
   return (
     <section className="mt-12">
       <h3 className="font-display text-2xl text-background mb-4 flex items-center gap-2">
@@ -693,6 +698,11 @@ function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
     () => (selectedCli ? tarjetas.filter((t) => t.comprador_cliente_id === selectedCli) : []),
     [tarjetas, selectedCli]
   );
+  useEffect(() => {
+    if (selectedCli && !clientes.some((c) => c.id === selectedCli)) {
+      setSelectedCli("");
+    }
+  }, [clientes, selectedCli]);
   return (
     <section className="mt-12">
       <h3 className="font-display text-2xl text-background mb-4 flex items-center gap-2">
