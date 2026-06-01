@@ -210,7 +210,7 @@ function expandirSlots(
 }
 
 export async function saveCita(
-  cita: Omit<Cita, "id" | "createdAt" | "estado" | "apellido_1" | "apellido_2">
+  cita: Omit<Cita, "id" | "createdAt" | "estado" | "apellido_1" | "apellido_2" | "alias">
 ): Promise<{ ok: true; cita: Cita } | { ok: false; error: string }> {
   // No permitir el mismo tratamiento en el mismo día/hora aunque sea con otra profesional
   {
