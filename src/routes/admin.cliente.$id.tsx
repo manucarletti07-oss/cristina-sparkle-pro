@@ -276,6 +276,29 @@ function ClienteFicha() {
               </div>
             )}
           </div>
+
+          <div className="glass-dark rounded-2xl p-5">
+            <h3 className="font-display text-xl mb-3">Tarjetas regalo del cliente</h3>
+            {tarjetas.length === 0 ? (
+              <p className="text-sm text-background/50">Sin tarjetas regalo.</p>
+            ) : (
+              <div className="space-y-2">
+                {tarjetas.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between text-sm border-b border-primary/10 py-2 gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{t.codigo} · {t.precio}€</p>
+                      <p className="text-xs text-background/50 truncate">
+                        {(t.servicios_nombres ?? []).join(", ")} · {format(parseISO(t.fecha_compra), "d MMM yyyy", { locale: es })}
+                      </p>
+                    </div>
+                    <Badge className={t.estado === "canjeada" ? "bg-emerald-500/15 text-emerald-300 border-emerald-400/40" : "bg-primary/15 text-primary border-primary/40"}>
+                      {t.estado}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         <section>
