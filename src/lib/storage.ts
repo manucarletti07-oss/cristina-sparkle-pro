@@ -887,3 +887,9 @@ export async function canjearTarjetaRegalo(id: string) {
   if (error) return { ok: false as const, error: error.message };
   return { ok: true as const };
 }
+
+export async function deleteTarjetaRegalo(id: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.from("tarjetas_regalo").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
