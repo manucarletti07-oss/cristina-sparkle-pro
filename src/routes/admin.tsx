@@ -512,7 +512,16 @@ function Admin() {
         <TarjetasRegaloPanel tarjetas={tarjetasRegalo} />
       </main>
 
-      <BookingModal open={openNew} onOpenChange={setOpenNew} category={null} />
+      <BookingModal
+        open={openNew}
+        onOpenChange={setOpenNew}
+        category={null}
+        onSuccess={() => {
+          getCitas().then(setCitas);
+          getBonosPanel().then(setBonos);
+          getTarjetasRegaloPanel().then(setTarjetasRegalo);
+        }}
+      />
       <EditCitaModal cita={editing} open={!!editing} onOpenChange={(v) => !v && setEditing(null)} />
       <BuyBonoAdminModal open={openBono} onOpenChange={setOpenBono} />
       <BuyTarjetaRegaloModal open={openTarjeta} onOpenChange={setOpenTarjeta} />
