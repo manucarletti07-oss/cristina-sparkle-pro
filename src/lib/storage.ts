@@ -306,7 +306,7 @@ export type Cliente = {
   observaciones: string | null;
 };
 
-export async function searchClientes(q: string, limit = 8): Promise<Cliente[]> {
+export async function searchClientes(q: string, limit = 500): Promise<Cliente[]> {
   const term = q.trim();
   if (!term) {
     // Sin término: devuelve los primeros clientes ordenados alfabéticamente
