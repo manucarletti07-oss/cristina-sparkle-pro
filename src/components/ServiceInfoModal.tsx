@@ -26,7 +26,7 @@ export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props
     if (open) getServicios().then((items) => setServiciosDb(items.map((s) => ({ nombre: s.nombre, precio: s.precio, categoria: s.categoria }))));
   }, [open]);
   const dbTreatments = category ? serviciosDb.filter((s) => s.categoria === category) : [];
-  const data = category ? { ...SERVICIOS[category], treatments: dbTreatments.length ? dbTreatments : SERVICIOS[category].treatments } : null;
+  const data = category ? { ...SERVICIOS[category], treatments: dbTreatments } : null;
   if (!data || !category) return null;
 
   return (
@@ -46,6 +46,11 @@ export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props
 
         <div className="space-y-3 pt-2">
           <ul className="space-y-2">
+            {data.treatments.length === 0 && (
+              <li className="rounded-xl border border-primary/15 bg-background/40 px-4 py-3 text-xs text-muted-foreground">
+                No hay tratamientos disponibles en esta categoría.
+              </li>
+            )}
             {data.treatments.map((t) => (
               <li
                 key={t.nombre}
