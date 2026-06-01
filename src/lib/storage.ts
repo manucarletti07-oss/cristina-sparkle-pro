@@ -735,3 +735,63 @@ export async function deleteFotoCliente(foto: FotoCliente) {
   await supabase.storage.from("clientes-fotos").remove([foto.storage_path]);
   await supabase.from("cliente_fotos").delete().eq("id", foto.id);
 }
+
+// ====== TARJETAS REGALO ======
+export type TarjetaRegalo = {
+  id: string;
+  comprador_cliente_id: string;
+  servicios_ids: string[];
+  servicios_nombres: string[];
+  precio: number;
+  codigo: string;
+  estado: "pendiente" | "canjeada";
+  fecha_compra: string;
+  fecha_canje: string | null;
+  observaciones: string | null;
+};
+
+function generarCodigoTarjeta() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 8; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return `TR-${out}`;
+}
+
+export async function comprarTarjetaRegalo(input: {
+  nombre: string;
+  telefono: string;
+  email?: string | null;
+  servicios: { id: string; nombre: string; precio: number }[];
+  precio?: number;
+  observaciones?: string | null;
+}): Promise<{ ok: true; tarjeta: TarjetaRegalo } | { ok: false; error: string }> {
+  if (input.servicios.length === 0) return { ok: false, error: "Selecciona al menos un tratamiento" };
+  const clienteId = await ensureClienteByTelefono(input.nombre, input.telefono, input.email);
+  if (!clienteId) return { ok: false, error: "Indica nombre y teléfono" };
+  const precio = typeof input.precio === "number" ? input.precio : input.servicios.reduce((s, x) => s + Number(x.precio || 0), 0);
+  const codigo = generarCodigoTarjeta();
+  const { data, error } = await supabase
+    .from("tarjetas_regalo")
+    .insert({
+      comprador_cliente_id: clienteId,
+      servicios_ids: input.servicios.map((s) => s.id),
+      servicios_nombres: input.servicios.map((s) => s.nombre),
+      precio,
+      codigo,
+      estado: "pendiente",
+      observaciones: input.observaciones ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, tarjeta: data as TarjetaRegalo };
+}
+
+export async function getTarjetasRegalo(): Promise<TarjetaRegalo[]> {
+  const { data, error } = await supabase
+    .from("tarjetas_regalo")
+    .select("*")
+    .order("fecha_compra", { ascending: false });
+  if (error) return [];
+  return (data ?? []) as TarjetaRegalo[];
+}
