@@ -599,7 +599,8 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
   const clientes = useMemo(() => {
     const map = new Map<string, { id: string; label: string }>();
     for (const b of bonos) {
-      const label = [b.cliente?.nombre, b.cliente?.apellido_1].filter(Boolean).join(" ") || b.clienteId.slice(0, 8);
+      const nombreCompleto = [b.cliente?.nombre, b.cliente?.apellido_1, b.cliente?.apellido_2].filter(Boolean).join(" ");
+      const label = nombreCompleto + (b.cliente?.alias ? `  (${b.cliente.alias})` : "") || b.clienteId.slice(0, 8);
       if (!map.has(b.clienteId)) map.set(b.clienteId, { id: b.clienteId, label });
     }
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
@@ -698,7 +699,8 @@ function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
   const clientes = useMemo(() => {
     const map = new Map<string, { id: string; label: string }>();
     for (const t of tarjetas) {
-      const label = [t.cliente?.nombre, t.cliente?.apellido_1].filter(Boolean).join(" ") || t.comprador_cliente_id.slice(0, 8);
+      const nombreCompleto = [t.cliente?.nombre, t.cliente?.apellido_1, t.cliente?.apellido_2].filter(Boolean).join(" ");
+      const label = nombreCompleto + (t.cliente?.alias ? `  (${t.cliente.alias})` : "") || t.comprador_cliente_id.slice(0, 8);
       if (!map.has(t.comprador_cliente_id)) map.set(t.comprador_cliente_id, { id: t.comprador_cliente_id, label });
     }
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
