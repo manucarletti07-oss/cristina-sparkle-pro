@@ -45,6 +45,7 @@ export type Cita = {
   nombre: string;
   apellido_1: string | null;
   apellido_2: string | null;
+  alias: string | null;
   telefono: string;
   email?: string | null;
   observaciones?: string | null;
@@ -98,6 +99,7 @@ const toCita = (r: Row): Cita => ({
   nombre: r.nombre,
   apellido_1: r.clientes?.apellido_1 ?? null,
   apellido_2: r.clientes?.apellido_2 ?? null,
+  alias: r.clientes?.alias ?? null,
   telefono: r.telefono,
   email: r.email,
   observaciones: r.observaciones,
@@ -208,7 +210,7 @@ function expandirSlots(
 }
 
 export async function saveCita(
-  cita: Omit<Cita, "id" | "createdAt" | "estado" | "apellido_1" | "apellido_2">
+  cita: Omit<Cita, "id" | "createdAt" | "estado" | "apellido_1" | "apellido_2" | "alias">
 ): Promise<{ ok: true; cita: Cita } | { ok: false; error: string }> {
   // No permitir el mismo tratamiento en el mismo día/hora aunque sea con otra profesional
   {

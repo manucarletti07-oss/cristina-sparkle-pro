@@ -835,6 +835,9 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
                   </Badge>
                 )}
               </div>
+              {cita.alias && (
+                <p className="text-[10px] text-primary/80 mt-0.5 tracking-wide">Alias: {cita.alias}</p>
+              )}
               <p className="text-xs text-background/55 mt-0.5 capitalize">{fechaFmt}</p>
             </div>
 
