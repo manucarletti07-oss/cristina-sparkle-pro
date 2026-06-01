@@ -160,6 +160,7 @@ function Admin() {
     const load = () => {
       getCitas().then(setCitas);
       getBonosPanel().then(setBonos);
+      getTarjetasRegaloPanel().then(setTarjetasRegalo);
     };
     load();
     const channel = supabase
@@ -177,6 +178,11 @@ function Admin() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "clientes" },
+        () => load()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tarjetas_regalo" },
         () => load()
       )
       .subscribe();
