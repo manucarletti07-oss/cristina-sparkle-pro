@@ -36,6 +36,8 @@ type Props = {
   category: ServiceCategory | null;
   /** Si se pasa, el modal se abre directo al formulario con ese tratamiento fijado. */
   preselectedTreatment?: (Treatment & { categoria: ServiceCategory }) | null;
+  /** Se llama tras guardar una cita correctamente. Útil para refrescar listas. */
+  onSuccess?: () => void;
 };
 
 const HORAS = generarSlots();
@@ -48,7 +50,7 @@ const CATEGORIAS: { key: ServiceCategory; label: string; icon: typeof Sparkles; 
   { key: "micropigmentacion", label: "Micropigmentación", icon: Brush, desc: "Microblading, eyeliner, lips…" },
 ];
 
-export function BookingModal({ open, onOpenChange, category, preselectedTreatment }: Props) {
+export function BookingModal({ open, onOpenChange, category, preselectedTreatment, onSuccess }: Props) {
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
@@ -206,6 +208,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       await canjearTarjetaRegalo(tarjetaActiva.id);
     }
     setStage("done");
+    onSuccess?.();
     toast.success("Cita confirmada", {
       description: `${format(fecha, "d 'de' MMMM", { locale: es })} · ${hora} · ${
         profesional === "cristina" ? "Cristina" : "Jessie"
