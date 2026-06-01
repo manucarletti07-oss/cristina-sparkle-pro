@@ -563,7 +563,15 @@ export async function updateServicioPrecio(id: string, precio: number) {
 }
 
 export async function updateServicio(id: string, patch: Partial<Omit<Servicio, "id">>) {
-  const { error } = await supabase.from("servicios").update(patch).eq("id", id);
+  const normalized = { ...patch };
+  if (typeof normalized.categoria === "string") {
+    normalized.categoria = normalized.categoria
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+  const { error } = await supabase.from("servicios").update(normalized).eq("id", id);
   if (error) return { ok: false as const, error: error.message };
   return { ok: true as const };
 }
