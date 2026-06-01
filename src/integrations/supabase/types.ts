@@ -114,6 +114,7 @@ export type Database = {
           recordatorio_enviado: boolean
           sala: number | null
           servicios: string[]
+          tarjeta_regalo_id: string | null
           telefono: string
           total: number
         }
@@ -135,6 +136,7 @@ export type Database = {
           recordatorio_enviado?: boolean
           sala?: number | null
           servicios?: string[]
+          tarjeta_regalo_id?: string | null
           telefono: string
           total?: number
         }
@@ -156,6 +158,7 @@ export type Database = {
           recordatorio_enviado?: boolean
           sala?: number | null
           servicios?: string[]
+          tarjeta_regalo_id?: string | null
           telefono?: string
           total?: number
         }
