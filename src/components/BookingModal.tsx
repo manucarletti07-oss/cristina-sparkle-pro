@@ -72,9 +72,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
 
   const data = cat ? {
     titulo: SERVICIOS[cat].titulo,
-    treatments: serviciosDb.filter((s) => (s as Treatment & { categoria?: string }).categoria === cat).length
-      ? serviciosDb.filter((s) => (s as Treatment & { categoria?: string }).categoria === cat)
-      : SERVICIOS[cat].treatments,
+    treatments: serviciosDb.filter((s) => (s as Treatment & { categoria?: string }).categoria === cat),
   } : null;
   const fixedTreatment = preselectedTreatment ?? null;
 
