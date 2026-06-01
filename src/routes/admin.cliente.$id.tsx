@@ -263,10 +263,10 @@ function ClienteFicha() {
             ) : (
               <div className="space-y-2">
                 {bonos.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between text-sm border-b border-primary/10 py-2">
-                    <div>
-                      <p className="font-medium">{b.nombre}</p>
-                      <p className="text-xs text-background/50">Compra: {format(parseISO(b.fechaCompra), "d MMM yyyy", { locale: es })}</p>
+                  <div key={b.id} className="flex items-center justify-between text-sm border-b border-primary/10 py-2 gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{b.nombre}</p>
+                      <p className="text-xs text-background/50 truncate">Compra: {format(parseISO(b.fechaCompra), "d MMM yyyy", { locale: es })}</p>
                     </div>
                     <Badge className={b.estado === "agotado" ? "bg-destructive/15 text-destructive border-destructive/40" : "bg-primary/15 text-primary border-primary/40"}>
                       {b.sesionesRestantes}/{b.totalSesiones}
