@@ -208,6 +208,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
       await canjearTarjetaRegalo(tarjetaActiva.id);
     }
     setStage("done");
+    onSuccess?.();
     toast.success("Cita confirmada", {
       description: `${format(fecha, "d 'de' MMMM", { locale: es })} · ${hora} · ${
         profesional === "cristina" ? "Cristina" : "Jessie"
