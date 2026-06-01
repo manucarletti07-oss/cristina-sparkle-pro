@@ -46,7 +46,7 @@ export function BuyBonoAdminModal({ open, onOpenChange }: Props) {
   useEffect(() => {
     if (!showSugs) return;
     const t = setTimeout(async () => {
-      const list = await searchClientes(query.trim(), 12);
+      const list = await searchClientes(query.trim(), 500);
       setSugs(list);
     }, query.trim().length === 0 ? 0 : 180);
     return () => clearTimeout(t);
