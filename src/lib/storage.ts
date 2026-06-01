@@ -544,7 +544,16 @@ export async function getServicios(): Promise<Servicio[]> {
     console.error(error);
     return [];
   }
-  return (data ?? []) as Servicio[];
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  return (data ?? []).map((s) => ({
+    ...(s as Servicio),
+    categoria: normalizar((s as Servicio).categoria),
+  }));
 }
 
 export async function updateServicioPrecio(id: string, precio: number) {
@@ -554,7 +563,15 @@ export async function updateServicioPrecio(id: string, precio: number) {
 }
 
 export async function updateServicio(id: string, patch: Partial<Omit<Servicio, "id">>) {
-  const { error } = await supabase.from("servicios").update(patch).eq("id", id);
+  const normalized = { ...patch };
+  if (typeof normalized.categoria === "string") {
+    normalized.categoria = normalized.categoria
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+  const { error } = await supabase.from("servicios").update(normalized).eq("id", id);
   if (error) return { ok: false as const, error: error.message };
   return { ok: true as const };
 }
@@ -571,7 +588,11 @@ export async function createServicio(input: {
     .from("servicios")
     .insert({
       nombre: input.nombre.trim(),
-      categoria: input.categoria.trim().toLowerCase(),
+      categoria: input.categoria
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase(),
       precio: input.precio,
       duracion_min: input.duracion_min ?? 45,
       requiere_maquina: input.requiere_maquina ?? false,
