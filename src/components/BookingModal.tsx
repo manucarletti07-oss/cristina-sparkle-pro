@@ -112,7 +112,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
   useEffect(() => {
     if (!showSugs) return;
     const t = setTimeout(async () => {
-      const list = await searchClientes(nombre.trim(), 8);
+      const list = await searchClientes(nombre.trim(), 500);
       setClienteSugs(list);
     }, nombre.trim().length === 0 ? 0 : 180);
     return () => clearTimeout(t);
