@@ -723,12 +723,12 @@ function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
         <span className="text-xs uppercase tracking-[0.2em] text-primary/70">({tarjetas.length})</span>
       </h3>
       <div className="mb-5 max-w-sm">
-        <Select value={selectedCli} onValueChange={setSelectedCli}>
+        <Select value={selectedCli || "__ninguno__"} onValueChange={(v) => setSelectedCli(v === "__ninguno__" ? "" : v)}>
           <SelectTrigger className="h-11 border-primary/40 bg-background/5 text-background">
             <SelectValue placeholder="Selecciona un cliente para ver sus tarjetas regalo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Ninguna</SelectItem>
+            <SelectItem value="__ninguno__">Ninguna</SelectItem>
             <SelectItem value="__todos__">Todas</SelectItem>
             {clientes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
