@@ -626,6 +626,8 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
             <SelectValue placeholder="Selecciona un cliente para ver sus bonos" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="">Ninguno</SelectItem>
+            <SelectItem value="__todos__">Todos</SelectItem>
             {clientes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
             ))}
