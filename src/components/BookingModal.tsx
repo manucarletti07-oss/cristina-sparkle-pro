@@ -41,6 +41,14 @@ type Props = {
 };
 
 const HORAS = generarSlots();
+const SLOT_MIN = 15;
+const horasSet = new Set(HORAS);
+const toMin = (h: string) => {
+  const [hh, mm] = h.split(":").map(Number);
+  return hh * 60 + mm;
+};
+const toHHMM = (m: number) =>
+  `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
 const CATEGORIAS: { key: ServiceCategory; label: string; icon: typeof Sparkles; desc: string }[] = [
   { key: "facial", label: "Faciales", icon: Sparkles, desc: "Limpieza, radiofrecuencia, dermapen…" },
@@ -381,7 +389,25 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                           const ocupada = ocupadas.get(h)?.has(profesional) ?? false;
                           const servSet = serviciosOcupados.get(h);
                           const choca = !!servSet && selected.some((s) => servSet.has(s));
-                          const bloqueada = ocupada || choca;
+                          // Duración requerida según tratamientos seleccionados
+                          const durRequerida = selected.length === 0
+                            ? SLOT_MIN
+                            : Math.max(
+                                SLOT_MIN,
+                                ...selected.map((n) => {
+                                  const s = serviciosDb.find((x) => x.nombre === n) as (Treatment & { duracion_min?: number }) | undefined;
+                                  return s?.duracion_min ?? 45;
+                                })
+                              );
+                          // No cabe si algún slot consecutivo está fuera de horario u ocupado
+                          let noCabe = false;
+                          const startMin = toMin(h);
+                          for (let t = startMin; t < startMin + durRequerida; t += SLOT_MIN) {
+                            const hh = toHHMM(t);
+                            if (!horasSet.has(hh)) { noCabe = true; break; }
+                            if (t !== startMin && ocupadas.get(hh)?.has(profesional)) { noCabe = true; break; }
+                          }
+                          const bloqueada = ocupada || choca || noCabe;
                           return (
                             <button
                               key={h}
@@ -403,6 +429,8 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                                   ? "Tratamiento ya reservado a esta hora"
                                   : ocupada
                                   ? `Ocupada con ${profesional}`
+                                  : noCabe
+                                  ? "No hay tiempo suficiente para este tratamiento"
                                   : ""
                               }
                             >
