@@ -606,7 +606,7 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [bonos]);
   const filtered = useMemo(
-    () => (selectedCli ? bonos.filter((b) => b.clienteId === selectedCli) : []),
+    () => (selectedCli === "__todos__" ? bonos : selectedCli ? bonos.filter((b) => b.clienteId === selectedCli) : []),
     [bonos, selectedCli]
   );
   useEffect(() => {
