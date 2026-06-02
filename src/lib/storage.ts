@@ -231,6 +231,29 @@ export async function saveCita(
       }
     }
   }
+  // Verificar que la duración del tratamiento cabe (no pisa otra cita de la misma profesional)
+  {
+    const duraciones = await getDuracionesServicios();
+    const nuevosSlots = expandirSlots(cita.hora, cita.servicios, duraciones);
+    const { data: delDia } = await supabase
+      .from("citas")
+      .select("hora, profesional, servicios")
+      .eq("fecha", cita.fecha)
+      .eq("estado", "pendiente");
+    if (delDia) {
+      const ocupadosProf = new Set<string>();
+      for (const r of delDia as { hora: string; profesional: Profesional; servicios: string[] }[]) {
+        if (r.profesional !== cita.profesional) continue;
+        for (const h of expandirSlots(r.hora, r.servicios ?? [], duraciones)) {
+          ocupadosProf.add(h);
+        }
+      }
+      const choque = nuevosSlots.find((h) => ocupadosProf.has(h));
+      if (choque) {
+        return { ok: false, error: `No hay tiempo suficiente: se solapa con otra cita a las ${choque}` };
+      }
+    }
+  }
   // Busca o crea cliente por teléfono
   const tel = cita.telefono.trim();
   let clienteId = cita.clienteId ?? null;

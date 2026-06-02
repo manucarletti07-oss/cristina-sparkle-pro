@@ -181,6 +181,28 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
     }
   }, [profesional, ocupadas, hora]);
 
+  // Si cambian los tratamientos (duración) y la hora elegida ya no cabe, limpiar.
+  useEffect(() => {
+    if (!hora) return;
+    const dur = selected.length === 0
+      ? SLOT_MIN
+      : Math.max(
+          SLOT_MIN,
+          ...selected.map((n) => {
+            const s = serviciosDb.find((x) => x.nombre === n) as (Treatment & { duracion_min?: number }) | undefined;
+            return s?.duracion_min ?? 45;
+          })
+        );
+    const start = toMin(hora);
+    for (let t = start; t < start + dur; t += SLOT_MIN) {
+      const hh = toHHMM(t);
+      if (!horasSet.has(hh) || (t !== start && ocupadas.get(hh)?.has(profesional))) {
+        setHora("");
+        return;
+      }
+    }
+  }, [selected, serviciosDb, hora, ocupadas, profesional]);
+
   const toggle = (n: string) =>
     setSelected((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
 
