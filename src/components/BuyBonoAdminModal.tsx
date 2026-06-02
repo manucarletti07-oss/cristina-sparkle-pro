@@ -94,7 +94,7 @@ export function BuyBonoAdminModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass max-w-md gold-shadow">
+      <DialogContent className="glass max-w-2xl gold-shadow max-h-[90vh] overflow-y-auto">
         {stage === "done" ? (
           <div className="py-8 text-center space-y-4">
             <div className="mx-auto size-16 rounded-full bg-primary/15 flex items-center justify-center">
