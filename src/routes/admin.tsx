@@ -708,7 +708,7 @@ function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [tarjetas]);
   const filtered = useMemo(
-    () => (selectedCli ? tarjetas.filter((t) => t.comprador_cliente_id === selectedCli) : []),
+    () => (selectedCli === "__todos__" ? tarjetas : selectedCli ? tarjetas.filter((t) => t.comprador_cliente_id === selectedCli) : []),
     [tarjetas, selectedCli]
   );
   useEffect(() => {
