@@ -353,11 +353,12 @@ export async function searchClientes(q: string, limit = 500): Promise<Cliente[]>
   let query = supabase
     .from("clientes")
     .select("id,nombre,apellido_1,apellido_2,telefono,email,alias,observaciones");
-  // Cada token debe empezar alguno de los campos de nombre o estar en el teléfono.
+  // Coincidencia SOLO desde el inicio del nombre (o por dígitos en el teléfono).
+  // No buscamos en apellidos ni alias para evitar resultados como "Maria López" al teclear "L".
   for (const t of tokens) {
     const pat = `${t}%`;
     query = query.or(
-      `nombre.ilike.${pat},apellido_1.ilike.${pat},apellido_2.ilike.${pat},alias.ilike.${pat},telefono.ilike.%${t}%`
+      `nombre.ilike.${pat},telefono.ilike.%${t}%`
     );
   }
   const { data, error } = await query.order("nombre").limit(limit);
