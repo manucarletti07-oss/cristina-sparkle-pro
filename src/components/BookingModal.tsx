@@ -41,7 +41,7 @@ type Props = {
 };
 
 const HORAS = generarSlots();
-const SLOT_MIN = 15;
+const SLOT_MIN = 10;
 const horasSet = new Set(HORAS);
 const toMin = (h: string) => {
   const [hh, mm] = h.split(":").map(Number);
