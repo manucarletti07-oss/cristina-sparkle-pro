@@ -301,7 +301,7 @@ export async function saveCita(
 
 export async function updateCita(
   id: string,
-  patch: Partial<Pick<Cita, "estado" | "fecha" | "hora" | "profesional" | "nombre" | "telefono" | "email" | "observaciones">>
+  patch: Partial<Pick<Cita, "estado" | "fecha" | "hora" | "profesional" | "nombre" | "telefono" | "email" | "observaciones" | "servicios" | "total">>
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { error } = await supabase.from("citas").update(patch).eq("id", id);
   if (error) {

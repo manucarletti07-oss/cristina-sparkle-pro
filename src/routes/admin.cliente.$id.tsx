@@ -332,7 +332,14 @@ function ClienteFicha() {
                   <tr key={c.id} className="border-t border-primary/10">
                     <td className="p-3">{format(parseISO(c.fecha), "d MMM yyyy", { locale: es })}</td>
                     <td className="p-3">{c.hora}</td>
-                    <td className="p-3 text-background/70">{c.servicios.join(", ")}</td>
+                    <td className="p-3 text-background/70">
+                      <div>{c.servicios.join(", ")}</div>
+                      {c.observaciones && (
+                        <div className="mt-1 text-xs italic text-primary/80 whitespace-pre-wrap">
+                          📝 {c.observaciones}
+                        </div>
+                      )}
+                    </td>
                     <td className="p-3 capitalize">{c.profesional}</td>
                     <td className="p-3">
                       <Badge className={c.estado === "realizada" ? "bg-emerald-500/15 text-emerald-300 border-emerald-400/40" : "bg-primary/15 text-primary border-primary/40"}>
