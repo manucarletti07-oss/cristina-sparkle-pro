@@ -621,12 +621,12 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
         <span className="text-xs uppercase tracking-[0.2em] text-primary/70">({bonos.length})</span>
       </h3>
       <div className="mb-5 max-w-sm">
-        <Select value={selectedCli} onValueChange={setSelectedCli}>
+        <Select value={selectedCli || "__ninguno__"} onValueChange={(v) => setSelectedCli(v === "__ninguno__" ? "" : v)}>
           <SelectTrigger className="h-11 border-primary/40 bg-background/5 text-background">
             <SelectValue placeholder="Selecciona un cliente para ver sus bonos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Ninguno</SelectItem>
+            <SelectItem value="__ninguno__">Ninguno</SelectItem>
             <SelectItem value="__todos__">Todos</SelectItem>
             {clientes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
