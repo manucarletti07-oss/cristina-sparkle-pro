@@ -9,13 +9,13 @@ export const PROFESIONALES: { key: Profesional; label: string }[] = [
   { key: "maquina", label: "Máquina (Sala 1)" },
 ];
 
-// Horario: mañana 10:00–14:00, tarde 16:00–20:00, slots de 15 min.
+// Horario: mañana 10:00–15:00, tarde 16:00–21:00, slots de 10 min.
 export const HORARIO = {
   bloques: [
-    { inicio: "10:00", fin: "14:00" },
-    { inicio: "16:00", fin: "20:00" },
+    { inicio: "10:00", fin: "15:00" },
+    { inicio: "16:00", fin: "21:00" },
   ],
-  duracionMin: 15,
+  duracionMin: 10,
 };
 
 function toMin(h: string) {
