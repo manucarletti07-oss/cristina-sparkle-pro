@@ -193,8 +193,8 @@ function Index() {
             </h2>
             <div className="h-px w-12 bg-primary my-8" />
             <p className="text-base md:text-lg leading-relaxed text-foreground/75">
-              Soy <span className="font-semibold text-primary">Cristina Cebrián</span>, esteticista en Alcorcón con más de
-              una década dedicada al cuidado integral de la piel y el cuerpo. Cada tratamiento se diseña a medida,
+              Soy <span className="font-semibold text-primary">Cristina Cebrián</span>, esteticista en Alcorcón
+              apasionada por el cuidado integral de la piel y el cuerpo. Cada tratamiento se diseña a medida,
               combinando tecnología avanzada (radiofrecuencia, criolipolisis, t-dynamics) con un enfoque cálido y cercano.
             </p>
             <p className="mt-4 italic font-display text-foreground/70">
