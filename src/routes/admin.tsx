@@ -728,6 +728,8 @@ function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
             <SelectValue placeholder="Selecciona un cliente para ver sus tarjetas regalo" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="">Ninguna</SelectItem>
+            <SelectItem value="__todos__">Todas</SelectItem>
             {clientes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
             ))}
