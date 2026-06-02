@@ -9,14 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   generarSlots,
   getOcupadasPorFecha,
+  getServicios,
   PROFESIONALES,
   updateCita,
   type Cita,
   type Profesional,
+  type Servicio,
 } from "@/lib/storage";
 
 const HORAS = generarSlots();
@@ -36,6 +39,8 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
   const [profesional, setProfesional] = useState<Profesional>("cristina");
   const [ocupadas, setOcupadas] = useState<Map<string, Set<Profesional>>>(new Map());
   const [saving, setSaving] = useState(false);
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [seleccionados, setSeleccionados] = useState<string[]>([]);
 
   useEffect(() => {
     if (open && cita) {
@@ -44,6 +49,8 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
       setFecha(parseISO(cita.fecha));
       setHora(cita.hora);
       setProfesional(cita.profesional);
+      setSeleccionados(cita.servicios ?? []);
+      getServicios().then((s) => setServicios(s.filter((x) => x.activo)));
     }
   }, [open, cita]);
 
@@ -56,6 +63,10 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
   const guardar = async () => {
     if (!cita) return;
     if (!fecha || !hora) return toast.error("Selecciona fecha y hora");
+    if (seleccionados.length === 0) return toast.error("Selecciona al menos un tratamiento");
+    const total = servicios
+      .filter((s) => seleccionados.includes(s.nombre))
+      .reduce((acc, s) => acc + Number(s.precio ?? 0), 0);
     setSaving(true);
     const res = await updateCita(cita.id, {
       nombre: nombre.trim(),
@@ -63,6 +74,8 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
       fecha: fechaIso,
       hora,
       profesional,
+      servicios: seleccionados,
+      total,
     });
     setSaving(false);
     if (!res.ok) return toast.error(res.error);
@@ -70,6 +83,14 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
     onSaved?.();
     onOpenChange(false);
   };
+
+  const toggleServicio = (n: string) =>
+    setSeleccionados((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
+
+  const serviciosPorCategoria = servicios.reduce<Record<string, Servicio[]>>((acc, s) => {
+    (acc[s.categoria] ??= []).push(s);
+    return acc;
+  }, {});
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,6 +108,35 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
             <div className="space-y-2">
               <Label>Teléfono</Label>
               <Input value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-[0.2em] text-primary">Tratamientos</Label>
+            <div className="max-h-48 overflow-y-auto rounded-xl border border-primary/25 bg-background/40 p-2 space-y-2">
+              {Object.keys(serviciosPorCategoria).length === 0 ? (
+                <p className="text-xs text-muted-foreground px-2 py-1">Cargando…</p>
+              ) : (
+                Object.entries(serviciosPorCategoria).map(([cat, lista]) => (
+                  <div key={cat}>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-primary/70 px-1 mb-1">{cat}</p>
+                    <div className="space-y-1">
+                      {lista.map((s) => (
+                        <label
+                          key={s.id}
+                          className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-primary/5 cursor-pointer text-sm"
+                        >
+                          <Checkbox
+                            checked={seleccionados.includes(s.nombre)}
+                            onCheckedChange={() => toggleServicio(s.nombre)}
+                          />
+                          <span className="flex-1">{s.nombre}</span>
+                          <span className="text-xs text-muted-foreground">{s.duracion_min}min · {s.precio}€</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
           <div className="space-y-2">
