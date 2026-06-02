@@ -198,7 +198,7 @@ function expandirSlots(
 ): string[] {
   const dur = Math.max(
     HORARIO.duracionMin,
-    ...servicios.map((s) => duraciones.get(s) ?? 45),
+    servicios.reduce((total, servicio) => total + (duraciones.get(servicio) ?? 45), 0),
   );
   const start = toMin(horaInicio);
   const end = start + dur;
