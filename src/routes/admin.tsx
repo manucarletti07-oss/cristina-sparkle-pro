@@ -825,7 +825,12 @@ function CitaCard({ cita, bono, onDone, onDelete, onEdit, onCobrar }: { cita: Ci
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-display text-xl text-background leading-tight">
-                  {cita.nombre} {cita.apellido_1} {cita.apellido_2}
+                  {[cita.nombre, cita.apellido_1, cita.apellido_2]
+                    .filter(Boolean)
+                    .join(" ")
+                    .split(/\s+/)
+                    .filter((v, i, a) => a.indexOf(v) === i)
+                    .join(" ")}
                 </h3>
                 {cita.estado === "realizada" ? (
                   <Badge className="bg-emerald-500/15 text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/15 text-[10px] uppercase tracking-[0.18em]">
