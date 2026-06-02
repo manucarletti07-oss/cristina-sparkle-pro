@@ -94,10 +94,10 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass max-w-md">
+      <DialogContent className="glass max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Modificar cita</DialogTitle>
-          <DialogDescription>Ajusta fecha, hora o profesional</DialogDescription>
+          <DialogDescription>Ajusta fecha, hora, profesional o tratamientos</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-3">
