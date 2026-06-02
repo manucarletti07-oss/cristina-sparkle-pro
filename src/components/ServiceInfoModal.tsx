@@ -25,7 +25,11 @@ export function ServiceInfoModal({ open, onOpenChange, category, onBook }: Props
   useEffect(() => {
     if (open) getServicios().then((items) => setServiciosDb(items.map((s) => ({ nombre: s.nombre, precio: s.precio, categoria: s.categoria }))));
   }, [open]);
-  const dbTreatments = category ? serviciosDb.filter((s) => s.categoria === category) : [];
+  const dbTreatments = category
+    ? serviciosDb.filter(
+        (s) => s.categoria === category && s.nombre.trim().toLowerCase() !== "presoterapia extra",
+      )
+    : [];
   const data = category ? { ...SERVICIOS[category], treatments: dbTreatments } : null;
   if (!data || !category) return null;
 
