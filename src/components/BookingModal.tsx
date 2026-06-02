@@ -159,10 +159,10 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
         ? SLOT_MIN
         : Math.max(
             SLOT_MIN,
-            ...selected.map((n) => {
+            selected.reduce((acc, n) => {
               const s = serviciosDb.find((x) => x.nombre === n) as (Treatment & { duracion_min?: number }) | undefined;
-              return s?.duracion_min ?? 45;
-            }),
+              return acc + (s?.duracion_min ?? 45);
+            }, 0),
           ),
     [selected, serviciosDb],
   );
