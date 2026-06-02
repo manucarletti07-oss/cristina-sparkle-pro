@@ -94,10 +94,10 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass max-w-md">
+      <DialogContent className="glass max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Modificar cita</DialogTitle>
-          <DialogDescription>Ajusta fecha, hora o profesional</DialogDescription>
+          <DialogDescription>Ajusta fecha, hora, profesional o tratamientos</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-3">
@@ -112,7 +112,7 @@ export function EditCitaModal({ cita, open, onOpenChange, onSaved }: Props) {
           </div>
           <div className="space-y-2">
             <Label className="text-xs uppercase tracking-[0.2em] text-primary">Tratamientos</Label>
-            <div className="max-h-48 overflow-y-auto rounded-xl border border-primary/25 bg-background/40 p-2 space-y-2">
+            <div className="max-h-36 overflow-y-auto rounded-xl border border-primary/25 bg-background/40 p-2 space-y-2">
               {Object.keys(serviciosPorCategoria).length === 0 ? (
                 <p className="text-xs text-muted-foreground px-2 py-1">Cargando…</p>
               ) : (
