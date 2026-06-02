@@ -446,8 +446,15 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                           return (
                             <button
                               key={h}
-                              disabled={bloqueada}
+                              type="button"
+                              aria-disabled={bloqueada}
                               onClick={() => {
+                                if (bloqueo) {
+                                  toast.error(bloqueo, {
+                                    description: "Por favor, elige otro horario disponible.",
+                                  });
+                                  return;
+                                }
                                 setHora(h);
                                 document.body.click();
                               }}
