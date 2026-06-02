@@ -712,7 +712,7 @@ function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
     [tarjetas, selectedCli]
   );
   useEffect(() => {
-    if (selectedCli && !clientes.some((c) => c.id === selectedCli)) {
+    if (selectedCli && selectedCli !== "__todos__" && !clientes.some((c) => c.id === selectedCli)) {
       setSelectedCli("");
     }
   }, [clientes, selectedCli]);
