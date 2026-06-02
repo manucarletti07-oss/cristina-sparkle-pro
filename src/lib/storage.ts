@@ -190,7 +190,7 @@ async function getDuracionesServicios(): Promise<Map<string, number>> {
   return map;
 }
 
-/** Dado una hora inicial y servicios, devuelve los slots de 15 min ocupados */
+/** Dado una hora inicial y servicios, devuelve los slots de 10 min ocupados */
 function expandirSlots(
   horaInicio: string,
   servicios: string[],
