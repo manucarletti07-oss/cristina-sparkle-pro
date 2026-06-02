@@ -111,7 +111,17 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
         setSelected([]);
       }
       getServicios().then((items) => {
-        setServiciosDb(items.map((s) => ({ nombre: s.nombre, precio: s.precio, categoria: s.categoria } as Treatment & { categoria: string })));
+        setServiciosDb(
+          items.map(
+            (s) =>
+              ({
+                nombre: s.nombre,
+                precio: s.precio,
+                categoria: s.categoria,
+                duracion_min: s.duracion_min,
+              }) as Treatment & { categoria: string; duracion_min: number },
+          ),
+        );
       });
     }
   }, [open, category, preselectedTreatment]);
@@ -142,6 +152,36 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
         .reduce((s, t) => s + t.precio, 0),
     [selected, data]
   );
+
+  const duracionSeleccionada = useMemo(
+    () =>
+      selected.length === 0
+        ? SLOT_MIN
+        : Math.max(
+            SLOT_MIN,
+            ...selected.map((n) => {
+              const s = serviciosDb.find((x) => x.nombre === n) as (Treatment & { duracion_min?: number }) | undefined;
+              return s?.duracion_min ?? 45;
+            }),
+          ),
+    [selected, serviciosDb],
+  );
+
+  const getBloqueoHora = (h: string) => {
+    const servSet = serviciosOcupados.get(h);
+    if (servSet && selected.some((s) => servSet.has(s))) return "Tratamiento ya reservado a esta hora";
+    if (ocupadas.get(h)?.has(profesional)) return `Ocupada con ${profesional}`;
+
+    const startMin = toMin(h);
+    for (let t = startMin; t < startMin + duracionSeleccionada; t += SLOT_MIN) {
+      const hh = toHHMM(t);
+      if (!horasSet.has(hh) || (t !== startMin && ocupadas.get(hh)?.has(profesional))) {
+        return "No hay tiempo suficiente para este tratamiento";
+      }
+    }
+
+    return "";
+  };
 
   // Buscar bono activo cuando hay teléfono
   useEffect(() => {
@@ -184,24 +224,10 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
   // Si cambian los tratamientos (duración) y la hora elegida ya no cabe, limpiar.
   useEffect(() => {
     if (!hora) return;
-    const dur = selected.length === 0
-      ? SLOT_MIN
-      : Math.max(
-          SLOT_MIN,
-          ...selected.map((n) => {
-            const s = serviciosDb.find((x) => x.nombre === n) as (Treatment & { duracion_min?: number }) | undefined;
-            return s?.duracion_min ?? 45;
-          })
-        );
-    const start = toMin(hora);
-    for (let t = start; t < start + dur; t += SLOT_MIN) {
-      const hh = toHHMM(t);
-      if (!horasSet.has(hh) || (t !== start && ocupadas.get(hh)?.has(profesional))) {
-        setHora("");
-        return;
-      }
+    if (getBloqueoHora(hora)) {
+      setHora("");
     }
-  }, [selected, serviciosDb, hora, ocupadas, profesional]);
+  }, [duracionSeleccionada, hora, ocupadas, profesional, selected, serviciosOcupados]);
 
   const toggle = (n: string) =>
     setSelected((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
@@ -212,6 +238,13 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
     if (!fecha) return toast.error("Selecciona una fecha");
     if (!hora) return toast.error("Selecciona una hora");
     if (selected.length === 0) return toast.error("Selecciona al menos un tratamiento");
+
+    const bloqueoHora = getBloqueoHora(hora);
+    if (bloqueoHora) {
+      return toast.error(bloqueoHora, {
+        description: "Por favor, elige otro horario disponible.",
+      });
+    }
 
     const fechaIso = format(fecha, "yyyy-MM-dd");
     setStage("loading");
@@ -408,33 +441,20 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                     <PopoverContent className="w-48 p-2" align="start">
                       <div className="grid grid-cols-3 gap-1.5 max-h-60 overflow-y-auto">
                         {HORAS.map((h) => {
-                          const ocupada = ocupadas.get(h)?.has(profesional) ?? false;
-                          const servSet = serviciosOcupados.get(h);
-                          const choca = !!servSet && selected.some((s) => servSet.has(s));
-                          // Duración requerida según tratamientos seleccionados
-                          const durRequerida = selected.length === 0
-                            ? SLOT_MIN
-                            : Math.max(
-                                SLOT_MIN,
-                                ...selected.map((n) => {
-                                  const s = serviciosDb.find((x) => x.nombre === n) as (Treatment & { duracion_min?: number }) | undefined;
-                                  return s?.duracion_min ?? 45;
-                                })
-                              );
-                          // No cabe si algún slot consecutivo está fuera de horario u ocupado
-                          let noCabe = false;
-                          const startMin = toMin(h);
-                          for (let t = startMin; t < startMin + durRequerida; t += SLOT_MIN) {
-                            const hh = toHHMM(t);
-                            if (!horasSet.has(hh)) { noCabe = true; break; }
-                            if (t !== startMin && ocupadas.get(hh)?.has(profesional)) { noCabe = true; break; }
-                          }
-                          const bloqueada = ocupada || choca || noCabe;
+                          const bloqueo = getBloqueoHora(h);
+                          const bloqueada = !!bloqueo;
                           return (
                             <button
                               key={h}
-                              disabled={bloqueada}
+                              type="button"
+                              aria-disabled={bloqueada}
                               onClick={() => {
+                                if (bloqueo) {
+                                  toast.error(bloqueo, {
+                                    description: "Por favor, elige otro horario disponible.",
+                                  });
+                                  return;
+                                }
                                 setHora(h);
                                 document.body.click();
                               }}
@@ -446,17 +466,12 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                                   ? "bg-primary text-primary-foreground"
                                   : "hover:bg-primary/10 text-foreground"
                               )}
-                              title={
-                                choca
-                                  ? "Tratamiento ya reservado a esta hora"
-                                  : ocupada
-                                  ? `Ocupada con ${profesional}`
-                                  : noCabe
-                                  ? "No hay tiempo suficiente para este tratamiento"
-                                  : ""
-                              }
+                              title={bloqueo}
                             >
-                              {h}
+                              <span>{h}</span>
+                              {bloqueo === "No hay tiempo suficiente para este tratamiento" && (
+                                <span className="sr-only">No hay tiempo suficiente para este tratamiento</span>
+                              )}
                             </button>
                           );
                         })}
