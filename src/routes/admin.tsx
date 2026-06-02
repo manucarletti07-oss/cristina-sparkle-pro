@@ -341,7 +341,7 @@ function Admin() {
             <Button
               onClick={() => setOpenBono(true)}
               variant="outline"
-              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em]"
+              className="border-primary/40 text-primary bg-transparent hover:bg-primary hover:text-primary-foreground text-xs uppercase tracking-[0.2em] min-w-[190px]"
             >
               <Gift className="size-4" /> Comprar bono
             </Button>
