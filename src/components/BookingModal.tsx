@@ -441,28 +441,8 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                     <PopoverContent className="w-48 p-2" align="start">
                       <div className="grid grid-cols-3 gap-1.5 max-h-60 overflow-y-auto">
                         {HORAS.map((h) => {
-                          const ocupada = ocupadas.get(h)?.has(profesional) ?? false;
-                          const servSet = serviciosOcupados.get(h);
-                          const choca = !!servSet && selected.some((s) => servSet.has(s));
-                          // Duración requerida según tratamientos seleccionados
-                          const durRequerida = selected.length === 0
-                            ? SLOT_MIN
-                            : Math.max(
-                                SLOT_MIN,
-                                ...selected.map((n) => {
-                                  const s = serviciosDb.find((x) => x.nombre === n) as (Treatment & { duracion_min?: number }) | undefined;
-                                  return s?.duracion_min ?? 45;
-                                })
-                              );
-                          // No cabe si algún slot consecutivo está fuera de horario u ocupado
-                          let noCabe = false;
-                          const startMin = toMin(h);
-                          for (let t = startMin; t < startMin + durRequerida; t += SLOT_MIN) {
-                            const hh = toHHMM(t);
-                            if (!horasSet.has(hh)) { noCabe = true; break; }
-                            if (t !== startMin && ocupadas.get(hh)?.has(profesional)) { noCabe = true; break; }
-                          }
-                          const bloqueada = ocupada || choca || noCabe;
+                          const bloqueo = getBloqueoHora(h);
+                          const bloqueada = !!bloqueo;
                           return (
                             <button
                               key={h}
@@ -479,17 +459,12 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
                                   ? "bg-primary text-primary-foreground"
                                   : "hover:bg-primary/10 text-foreground"
                               )}
-                              title={
-                                choca
-                                  ? "Tratamiento ya reservado a esta hora"
-                                  : ocupada
-                                  ? `Ocupada con ${profesional}`
-                                  : noCabe
-                                  ? "No hay tiempo suficiente para este tratamiento"
-                                  : ""
-                              }
+                              title={bloqueo}
                             >
-                              {h}
+                              <span>{h}</span>
+                              {bloqueo === "No hay tiempo suficiente para este tratamiento" && (
+                                <span className="sr-only">No hay tiempo suficiente para este tratamiento</span>
+                              )}
                             </button>
                           );
                         })}
