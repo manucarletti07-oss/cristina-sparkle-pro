@@ -338,7 +338,7 @@ export function BookingModal({ open, onOpenChange, category, preselectedTreatmen
             </DialogHeader>
 
             <div className="space-y-5 pt-2">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>Nombre</Label>
                   <div className="relative">
