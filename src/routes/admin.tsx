@@ -606,11 +606,11 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [bonos]);
   const filtered = useMemo(
-    () => (selectedCli ? bonos.filter((b) => b.clienteId === selectedCli) : []),
+    () => (selectedCli === "__todos__" ? bonos : selectedCli ? bonos.filter((b) => b.clienteId === selectedCli) : []),
     [bonos, selectedCli]
   );
   useEffect(() => {
-    if (selectedCli && !clientes.some((c) => c.id === selectedCli)) {
+    if (selectedCli && selectedCli !== "__todos__" && !clientes.some((c) => c.id === selectedCli)) {
       setSelectedCli("");
     }
   }, [clientes, selectedCli]);
@@ -626,6 +626,8 @@ function BonosPanel({ bonos }: { bonos: Bono[] }) {
             <SelectValue placeholder="Selecciona un cliente para ver sus bonos" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="">Ninguno</SelectItem>
+            <SelectItem value="__todos__">Todos</SelectItem>
             {clientes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
             ))}
@@ -706,11 +708,11 @@ function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [tarjetas]);
   const filtered = useMemo(
-    () => (selectedCli ? tarjetas.filter((t) => t.comprador_cliente_id === selectedCli) : []),
+    () => (selectedCli === "__todos__" ? tarjetas : selectedCli ? tarjetas.filter((t) => t.comprador_cliente_id === selectedCli) : []),
     [tarjetas, selectedCli]
   );
   useEffect(() => {
-    if (selectedCli && !clientes.some((c) => c.id === selectedCli)) {
+    if (selectedCli && selectedCli !== "__todos__" && !clientes.some((c) => c.id === selectedCli)) {
       setSelectedCli("");
     }
   }, [clientes, selectedCli]);
@@ -726,6 +728,8 @@ function TarjetasRegaloPanel({ tarjetas }: { tarjetas: TarjetaRegalo[] }) {
             <SelectValue placeholder="Selecciona un cliente para ver sus tarjetas regalo" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="">Ninguna</SelectItem>
+            <SelectItem value="__todos__">Todas</SelectItem>
             {clientes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
             ))}
