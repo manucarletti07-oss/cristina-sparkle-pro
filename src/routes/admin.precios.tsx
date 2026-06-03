@@ -248,7 +248,7 @@ function Precios() {
           <h2 className="font-display text-xl flex items-center gap-2">
             <Plus className="size-5 text-primary" /> Añadir servicio
           </h2>
-          <div className="grid sm:grid-cols-[1fr_1fr_120px_120px_auto] gap-3 items-end">
+          <div className="grid sm:grid-cols-[1fr_1fr_120px_120px_140px_auto] gap-3 items-end">
             <div className="space-y-1">
               <Label className="text-background/70 text-[10px] uppercase tracking-[0.2em]">Nombre</Label>
               <Input
@@ -288,6 +288,18 @@ function Precios() {
                 className="bg-background/5 border-primary/30 text-background"
               />
             </div>
+            <div className="space-y-1">
+              <Label className="text-background/70 text-[10px] uppercase tracking-[0.2em]">Agenda</Label>
+              <Select value={nuevo.agenda} onValueChange={(v) => setNuevo((p) => ({ ...p, agenda: v as "unica" | "compartida" }))}>
+                <SelectTrigger className="bg-background/5 border-primary/30 text-background h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unica">Única</SelectItem>
+                  <SelectItem value="compartida">Compartida</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button onClick={create} className="bg-primary text-primary-foreground hover:bg-primary/90 h-10">
               <Plus className="size-4" /> Crear
             </Button>
@@ -305,6 +317,7 @@ function Precios() {
                     <th className="text-left p-3 w-[160px]">Categoría</th>
                     <th className="text-left p-3 w-[160px]">Precio (€)</th>
                     <th className="text-left p-3 w-[140px]">Duración (min)</th>
+                    <th className="text-left p-3 w-[140px]">Agenda</th>
                     <th className="text-right p-3 w-[200px]"></th>
                   </tr>
                 </thead>
@@ -359,6 +372,21 @@ function Precios() {
                             />
                           ) : (
                             <span>{s.duracion_min} min</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {isEditing ? (
+                            <Select value={draft.agenda} onValueChange={(v) => setDraft((p) => ({ ...p, agenda: v as "unica" | "compartida" }))}>
+                              <SelectTrigger className="bg-background/5 border-primary/30 text-background h-9">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="unica">Única</SelectItem>
+                                <SelectItem value="compartida">Compartida</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="capitalize text-background/70">{s.agenda === "compartida" ? "Compartida" : "Única"}</span>
                           )}
                         </td>
                         <td className="p-3 text-right">
