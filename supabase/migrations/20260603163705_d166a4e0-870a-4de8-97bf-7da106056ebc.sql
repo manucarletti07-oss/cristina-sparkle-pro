@@ -1,0 +1,1 @@
+ALTER TABLE public.servicios ADD COLUMN agenda text NOT NULL DEFAULT 'unica' CHECK (agenda IN ('unica','compartida'));

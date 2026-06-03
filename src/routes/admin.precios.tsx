@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PrivateAccessGate } from "@/components/PrivateAccessGate";
 import {
   AlertDialog,
@@ -51,17 +52,19 @@ function Precios() {
   const [unlocked, setUnlocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBonoId, setEditingBonoId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string; duracion: string }>({
+  const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string; duracion: string; agenda: "unica" | "compartida" }>({
     nombre: "",
     categoria: "",
     precio: "",
     duracion: "",
+    agenda: "unica",
   });
-  const [nuevo, setNuevo] = useState<{ nombre: string; categoria: string; precio: string; duracion: string }>({
+  const [nuevo, setNuevo] = useState<{ nombre: string; categoria: string; precio: string; duracion: string; agenda: "unica" | "compartida" }>({
     nombre: "",
     categoria: "",
     precio: "",
     duracion: "",
+    agenda: "unica",
   });
   const [draftBono, setDraftBono] = useState<{ nombre: string; sesiones: string; precio: string }>({
     nombre: "",
@@ -87,12 +90,12 @@ function Precios() {
 
   const startEdit = (s: Servicio) => {
     setEditingId(s.id);
-    setDraft({ nombre: s.nombre, categoria: s.categoria, precio: String(s.precio), duracion: String(s.duracion_min ?? 45) });
+    setDraft({ nombre: s.nombre, categoria: s.categoria, precio: String(s.precio), duracion: String(s.duracion_min ?? 45), agenda: s.agenda ?? "unica" });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setDraft({ nombre: "", categoria: "", precio: "", duracion: "" });
+    setDraft({ nombre: "", categoria: "", precio: "", duracion: "", agenda: "unica" });
   };
 
   const saveEdit = async (s: Servicio) => {
@@ -107,11 +110,12 @@ function Precios() {
       categoria: draft.categoria.trim().toLowerCase(),
       precio,
       duracion_min,
+      agenda: draft.agenda,
     });
     if (!res.ok) return toast.error(res.error);
     toast.success("Servicio actualizado");
     setServicios((arr) =>
-      arr.map((x) => (x.id === s.id ? { ...x, nombre: draft.nombre.trim(), categoria: draft.categoria.trim().toLowerCase(), precio, duracion_min } : x))
+      arr.map((x) => (x.id === s.id ? { ...x, nombre: draft.nombre.trim(), categoria: draft.categoria.trim().toLowerCase(), precio, duracion_min, agenda: draft.agenda } : x))
     );
     cancelEdit();
   };
@@ -135,11 +139,12 @@ function Precios() {
       categoria: nuevo.categoria,
       precio,
       duracion_min,
+      agenda: nuevo.agenda,
     });
     if (!res.ok) return toast.error(res.error);
     toast.success("Servicio creado");
     setServicios((arr) => [...arr, res.servicio]);
-    setNuevo({ nombre: "", categoria: "", precio: "", duracion: "" });
+    setNuevo({ nombre: "", categoria: "", precio: "", duracion: "", agenda: "unica" });
   };
 
   const startEditBono = (b: BonoCatalogo) => {
@@ -243,7 +248,7 @@ function Precios() {
           <h2 className="font-display text-xl flex items-center gap-2">
             <Plus className="size-5 text-primary" /> Añadir servicio
           </h2>
-          <div className="grid sm:grid-cols-[1fr_1fr_120px_120px_auto] gap-3 items-end">
+          <div className="grid sm:grid-cols-[1fr_1fr_120px_120px_140px_auto] gap-3 items-end">
             <div className="space-y-1">
               <Label className="text-background/70 text-[10px] uppercase tracking-[0.2em]">Nombre</Label>
               <Input
@@ -283,6 +288,18 @@ function Precios() {
                 className="bg-background/5 border-primary/30 text-background"
               />
             </div>
+            <div className="space-y-1">
+              <Label className="text-background/70 text-[10px] uppercase tracking-[0.2em]">Agenda</Label>
+              <Select value={nuevo.agenda} onValueChange={(v) => setNuevo((p) => ({ ...p, agenda: v as "unica" | "compartida" }))}>
+                <SelectTrigger className="bg-background/5 border-primary/30 text-background h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unica">Única</SelectItem>
+                  <SelectItem value="compartida">Compartida</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button onClick={create} className="bg-primary text-primary-foreground hover:bg-primary/90 h-10">
               <Plus className="size-4" /> Crear
             </Button>
@@ -300,6 +317,7 @@ function Precios() {
                     <th className="text-left p-3 w-[160px]">Categoría</th>
                     <th className="text-left p-3 w-[160px]">Precio (€)</th>
                     <th className="text-left p-3 w-[140px]">Duración (min)</th>
+                    <th className="text-left p-3 w-[140px]">Agenda</th>
                     <th className="text-right p-3 w-[200px]"></th>
                   </tr>
                 </thead>
@@ -354,6 +372,21 @@ function Precios() {
                             />
                           ) : (
                             <span>{s.duracion_min} min</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {isEditing ? (
+                            <Select value={draft.agenda} onValueChange={(v) => setDraft((p) => ({ ...p, agenda: v as "unica" | "compartida" }))}>
+                              <SelectTrigger className="bg-background/5 border-primary/30 text-background h-9">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="unica">Única</SelectItem>
+                                <SelectItem value="compartida">Compartida</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="capitalize text-background/70">{s.agenda === "compartida" ? "Compartida" : "Única"}</span>
                           )}
                         </td>
                         <td className="p-3 text-right">

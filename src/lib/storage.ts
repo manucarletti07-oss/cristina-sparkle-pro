@@ -558,12 +558,13 @@ export type Servicio = {
   requiere_maquina: boolean;
   sala_requerida: number | null;
   activo: boolean;
+  agenda: "unica" | "compartida";
 };
 
 export async function getServicios(): Promise<Servicio[]> {
   const { data, error } = await supabase
     .from("servicios")
-    .select("id,nombre,categoria,precio,duracion_min,requiere_maquina,sala_requerida,activo")
+    .select("id,nombre,categoria,precio,duracion_min,requiere_maquina,sala_requerida,activo,agenda")
     .order("categoria")
     .order("nombre");
   if (error) {
@@ -609,6 +610,7 @@ export async function createServicio(input: {
   duracion_min?: number;
   requiere_maquina?: boolean;
   sala_requerida?: number | null;
+  agenda?: "unica" | "compartida";
 }): Promise<{ ok: true; servicio: Servicio } | { ok: false; error: string }> {
   const { data, error } = await supabase
     .from("servicios")
@@ -623,9 +625,10 @@ export async function createServicio(input: {
       duracion_min: input.duracion_min ?? 45,
       requiere_maquina: input.requiere_maquina ?? false,
       sala_requerida: input.sala_requerida ?? null,
+      agenda: input.agenda ?? "unica",
       activo: true,
     })
-    .select("id,nombre,categoria,precio,duracion_min,requiere_maquina,sala_requerida,activo")
+    .select("id,nombre,categoria,precio,duracion_min,requiere_maquina,sala_requerida,activo,agenda")
     .single();
   if (error) return { ok: false, error: error.message };
   return { ok: true, servicio: data as Servicio };
