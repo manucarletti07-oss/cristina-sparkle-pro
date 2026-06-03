@@ -169,11 +169,16 @@ export async function getServiciosOcupadosPorFecha(
   const map = new Map<string, Set<string>>();
   if (error || !data) return map;
   const duraciones = await getDuracionesServicios();
+  const agendas = await getAgendasServicios();
   for (const r of data as { hora: string; servicios: string[] }[]) {
     const slots = expandirSlots(r.hora, r.servicios ?? [], duraciones);
     for (const h of slots) {
       const set = map.get(h) ?? new Set<string>();
-      for (const s of r.servicios ?? []) set.add(s);
+      for (const s of r.servicios ?? []) {
+        // Solo bloquean cross-profesional los tratamientos con agenda "unica".
+        // Los "compartida" se pueden hacer en paralelo en varias agendas.
+        if ((agendas.get(s) ?? "unica") === "unica") set.add(s);
+      }
       map.set(h, set);
     }
   }
@@ -186,6 +191,16 @@ async function getDuracionesServicios(): Promise<Map<string, number>> {
   const map = new Map<string, number>();
   for (const r of (data ?? []) as { nombre: string; duracion_min: number }[]) {
     map.set(r.nombre, r.duracion_min ?? 45);
+  }
+  return map;
+}
+
+/** Devuelve mapa nombre_servicio -> agenda ("unica" | "compartida") */
+async function getAgendasServicios(): Promise<Map<string, "unica" | "compartida">> {
+  const { data } = await supabase.from("servicios").select("nombre, agenda");
+  const map = new Map<string, "unica" | "compartida">();
+  for (const r of (data ?? []) as { nombre: string; agenda: string }[]) {
+    map.set(r.nombre, (r.agenda === "compartida" ? "compartida" : "unica"));
   }
   return map;
 }
