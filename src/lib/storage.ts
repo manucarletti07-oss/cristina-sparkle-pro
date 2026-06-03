@@ -229,16 +229,23 @@ export async function saveCita(
 ): Promise<{ ok: true; cita: Cita } | { ok: false; error: string }> {
   // No permitir el mismo tratamiento en el mismo día/hora aunque sea con otra profesional
   {
+    const agendas = await getAgendasServicios();
     const { data: solapadas } = await supabase
       .from("citas")
-      .select("servicios")
+      .select("servicios, profesional")
       .eq("fecha", cita.fecha)
       .eq("hora", cita.hora)
       .eq("estado", "pendiente");
     if (solapadas) {
       const yaReservados = new Set<string>();
-      for (const r of solapadas as { servicios: string[] }[]) {
-        for (const s of r.servicios ?? []) yaReservados.add(s);
+      for (const r of solapadas as { servicios: string[]; profesional: string }[]) {
+        for (const s of r.servicios ?? []) {
+          const tipo = agendas.get(s) ?? "unica";
+          // "compartida": permitir el mismo tratamiento en paralelo en otras agendas.
+          // Sólo choca si es la misma profesional.
+          if (tipo === "compartida" && r.profesional !== cita.profesional) continue;
+          yaReservados.add(s);
+        }
       }
       const choca = cita.servicios.find((s) => yaReservados.has(s));
       if (choca) {
