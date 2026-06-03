@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PrivateAccessGate } from "@/components/PrivateAccessGate";
 import {
   AlertDialog,
@@ -51,17 +52,19 @@ function Precios() {
   const [unlocked, setUnlocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBonoId, setEditingBonoId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string; duracion: string }>({
+  const [draft, setDraft] = useState<{ nombre: string; categoria: string; precio: string; duracion: string; agenda: "unica" | "compartida" }>({
     nombre: "",
     categoria: "",
     precio: "",
     duracion: "",
+    agenda: "unica",
   });
-  const [nuevo, setNuevo] = useState<{ nombre: string; categoria: string; precio: string; duracion: string }>({
+  const [nuevo, setNuevo] = useState<{ nombre: string; categoria: string; precio: string; duracion: string; agenda: "unica" | "compartida" }>({
     nombre: "",
     categoria: "",
     precio: "",
     duracion: "",
+    agenda: "unica",
   });
   const [draftBono, setDraftBono] = useState<{ nombre: string; sesiones: string; precio: string }>({
     nombre: "",
@@ -87,12 +90,12 @@ function Precios() {
 
   const startEdit = (s: Servicio) => {
     setEditingId(s.id);
-    setDraft({ nombre: s.nombre, categoria: s.categoria, precio: String(s.precio), duracion: String(s.duracion_min ?? 45) });
+    setDraft({ nombre: s.nombre, categoria: s.categoria, precio: String(s.precio), duracion: String(s.duracion_min ?? 45), agenda: s.agenda ?? "unica" });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setDraft({ nombre: "", categoria: "", precio: "", duracion: "" });
+    setDraft({ nombre: "", categoria: "", precio: "", duracion: "", agenda: "unica" });
   };
 
   const saveEdit = async (s: Servicio) => {
@@ -107,11 +110,12 @@ function Precios() {
       categoria: draft.categoria.trim().toLowerCase(),
       precio,
       duracion_min,
+      agenda: draft.agenda,
     });
     if (!res.ok) return toast.error(res.error);
     toast.success("Servicio actualizado");
     setServicios((arr) =>
-      arr.map((x) => (x.id === s.id ? { ...x, nombre: draft.nombre.trim(), categoria: draft.categoria.trim().toLowerCase(), precio, duracion_min } : x))
+      arr.map((x) => (x.id === s.id ? { ...x, nombre: draft.nombre.trim(), categoria: draft.categoria.trim().toLowerCase(), precio, duracion_min, agenda: draft.agenda } : x))
     );
     cancelEdit();
   };
@@ -135,11 +139,12 @@ function Precios() {
       categoria: nuevo.categoria,
       precio,
       duracion_min,
+      agenda: nuevo.agenda,
     });
     if (!res.ok) return toast.error(res.error);
     toast.success("Servicio creado");
     setServicios((arr) => [...arr, res.servicio]);
-    setNuevo({ nombre: "", categoria: "", precio: "", duracion: "" });
+    setNuevo({ nombre: "", categoria: "", precio: "", duracion: "", agenda: "unica" });
   };
 
   const startEditBono = (b: BonoCatalogo) => {
